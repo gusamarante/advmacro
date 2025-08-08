@@ -18,7 +18,7 @@ n_trajectory = 50
 
 # Convergence parameters
 maxiter = 1000
-tol = 1e-6
+tol = 1e-8
 
 # Steady states
 k_ss = (alpha / ((1 / beta) - (1 - delta))) ** (1 / (1 - alpha))  # capital
