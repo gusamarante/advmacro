@@ -11,7 +11,7 @@ beta = 0.96
 delta = 0.1
 
 # number of points in the grid of k
-nk = 5000  # TODO increase this
+nk = 5000
 
 # number of points in the trajectory of k
 n_trajectory = 50
