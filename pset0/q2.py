@@ -1,3 +1,7 @@
+"""
+Value Function Iteration for the Neoclassical Growth Model
+"""
+
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
