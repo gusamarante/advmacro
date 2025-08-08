@@ -32,6 +32,9 @@ def utility(c):
 # initial guess of the value function
 V = np.zeros(nk)
 
+# Saves the iterations of V
+V_iters = pd.DataFrame(columns=gk)
+
 # initial guess of the policy function (indexes)
 policy_idx = np.full(nk, 0, dtype=int)
 
@@ -69,9 +72,10 @@ for ii in range(maxiter):  # ii-th iteration of the value function
         print('Maximum iterations reached. No convergence of the value function')
         break
 
+    V_iters.loc[ii] = V
     V = V_new
-    # TODO save iterations to DF here
 
+# Compute the policy function
 policy_function = gk[policy_idx]  # k-prime as a function of state k
 
 
@@ -109,7 +113,32 @@ plt.show()
 plt.close()
 
 
-# TODO chart of the convergence
+# ===== Plot the convergence of V =====
+size = 5
+fig = plt.figure(figsize=(size * (16 / 9), size))
+
+ax = plt.subplot2grid((1, 1), (0, 0))
+ax.set_title("Convergence of the Value Function")
+
+for ii in [0, 1, 2, 10, 50]:
+    ax.plot(gk, V_iters.loc[ii].values, label=f"Iteration {ii}")
+
+ax.plot(gk, V_iters.iloc[-1].values, label=f"Converged", ls='--')
+ax.axhline(0, color='black', lw=0.5)
+ax.axvline(0, color='black', lw=0.5)
+ax.set_xlabel(r"$k_t$")
+ax.set_ylabel(r"$V\left(k_t\right)$")
+ax.xaxis.grid(color="grey", linestyle="-", linewidth=0.5, alpha=0.5)
+ax.yaxis.grid(color="grey", linestyle="-", linewidth=0.5, alpha=0.5)
+ax.legend(loc='upper left', frameon=True)
+
+plt.tight_layout()
+
+plt.savefig(f'/Users/{getpass.getuser()}/Dropbox/PhD/Advanced Macro/PSET 0/figures/VFI Convergence.pdf')
+plt.show()
+plt.close()
+
+
 # TODO chart of the trajectory
 
 
