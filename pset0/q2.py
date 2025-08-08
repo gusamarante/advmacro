@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import getpass
+from scipy.interpolate import CubicSpline
 
 
 # parameters
@@ -11,6 +12,9 @@ delta = 0.1
 
 # number of points in the grid of k
 nk = 1000
+
+# number of points in the trajectory of k
+n_trajectory = 50
 
 # Convergence parameters
 maxiter = 1000
@@ -75,8 +79,14 @@ for ii in range(maxiter):  # ii-th iteration of the value function
     V_iters.loc[ii] = V
     V = V_new
 
-# Compute the policy function
+# Compute the policy function and interpolate
 policy_function = gk[policy_idx]  # k-prime as a function of state k
+p_func = CubicSpline(gk, policy_function)
+
+# Compute the simulated trajectory of k
+k_trajectory = pd.Series(data={0: gk[0]})
+for ii in range(1, n_trajectory):
+    k_trajectory.loc[ii] = p_func(k_trajectory.loc[ii - 1])
 
 
 # ===== Plot of the Functions =====
@@ -139,8 +149,24 @@ plt.show()
 plt.close()
 
 
-# TODO chart of the trajectory
+# ===== Plot of the trajectory =====
+size = 4
+fig = plt.figure(figsize=(size * (16 / 7.3), size))
+
+ax = plt.subplot2grid((1, 1), (0, 0))
+ax.set_title("Trajectory of Capital")
+ax.plot(k_trajectory, color="tab:blue", label="Capital")
+ax.axhline(0, color='black', lw=0.5)
+ax.axhline(k_ss, color='tab:red', lw=1, ls='--', label='steady state')
+ax.set_xlabel(r"$t$")
+ax.set_ylabel(r"$k_t$")
+ax.xaxis.grid(color="grey", linestyle="-", linewidth=0.5, alpha=0.5)
+ax.yaxis.grid(color="grey", linestyle="-", linewidth=0.5, alpha=0.5)
+ax.legend(loc='best', frameon=True)
 
 
+plt.tight_layout()
 
-
+plt.savefig(f'/Users/{getpass.getuser()}/Dropbox/PhD/Advanced Macro/PSET 0/figures/VFI Functions.pdf')
+plt.show()
+plt.close()
