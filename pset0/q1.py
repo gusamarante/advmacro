@@ -12,3 +12,6 @@ where z is the managerial ability and n is the number of workers hired.
 Agents are heterogenous in their managerial ability, z, which has F(Z) as its
 cdf, with support [z_min, inf).
 """
+
+# TODO solve analytically with the pareto distribution
+# TODO solve numerically with the lognormal distribution
