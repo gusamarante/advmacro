@@ -11,7 +11,7 @@ beta = 0.96
 delta = 0.1
 
 # number of points in the grid of k
-nk = 1000
+nk = 5000  # TODO increase this
 
 # number of points in the trajectory of k
 n_trajectory = 50
@@ -20,8 +20,11 @@ n_trajectory = 50
 maxiter = 1000
 tol = 1e-6
 
-# Steady state of capital
-k_ss = (alpha / ((1 / beta) - (1 - delta))) ** (1 / (1 - alpha))
+# Steady states
+k_ss = (alpha / ((1 / beta) - (1 - delta))) ** (1 / (1 - alpha))  # capital
+y_ss = k_ss ** alpha
+i_ss = delta * k_ss
+c_ss = y_ss - i_ss
 
 # grid of capital
 gk = np.linspace(2*k_ss/nk, 2*k_ss, num=nk)
@@ -67,6 +70,10 @@ for ii in range(maxiter):  # ii-th iteration of the value function
 
     # Check convergence
     diff = np.abs(V_new - V).max()
+
+    if ii % 10 == 0:
+        print(f"Iteration {ii} with diff = {diff}")
+
     if diff < tol:
         print(f'Convergence achieved after {ii + 1} iteations')
         break
@@ -83,10 +90,14 @@ for ii in range(maxiter):  # ii-th iteration of the value function
 policy_function = gk[policy_idx]  # k-prime as a function of state k
 p_func = CubicSpline(gk, policy_function)
 
-# Compute the simulated trajectory of k
+# Compute the simulated trajectories
 k_trajectory = pd.Series(data={0: gk[0]})
 for ii in range(1, n_trajectory):
     k_trajectory.loc[ii] = p_func(k_trajectory.loc[ii - 1])
+
+y_trajectory = k_trajectory ** alpha
+i_trajectory = k_trajectory - (1 - delta) * k_trajectory.shift(1)
+c_trajectory = y_trajectory - i_trajectory
 
 
 # ===== Plot of the Functions =====
@@ -150,23 +161,54 @@ plt.close()
 
 
 # ===== Plot of the trajectory =====
-size = 4
-fig = plt.figure(figsize=(size * (16 / 7.3), size))
+size = 6
+fig = plt.figure(figsize=(size * (16 / 9), size))
 
-ax = plt.subplot2grid((1, 1), (0, 0))
-ax.set_title("Trajectory of Capital")
-ax.plot(k_trajectory, color="tab:blue", label="Capital")
+ax = plt.subplot2grid((2, 2), (0, 0))
+ax.set_title("Capital")
+ax.plot(k_trajectory, color="tab:blue", label="Trajectory")
 ax.axhline(0, color='black', lw=0.5)
-ax.axhline(k_ss, color='tab:red', lw=1, ls='--', label='steady state')
+ax.axhline(k_ss, color='tab:red', lw=1, ls='--', label='Steady State')
 ax.set_xlabel(r"$t$")
 ax.set_ylabel(r"$k_t$")
 ax.xaxis.grid(color="grey", linestyle="-", linewidth=0.5, alpha=0.5)
 ax.yaxis.grid(color="grey", linestyle="-", linewidth=0.5, alpha=0.5)
+
+ax = plt.subplot2grid((2, 2), (0, 1))
+ax.set_title("Output")
+ax.plot(y_trajectory, color="tab:blue", label="Trajectory")
+ax.axhline(0, color='black', lw=0.5)
+ax.axhline(y_ss, color='tab:red', lw=1, ls='--', label='Steady State')
+ax.set_xlabel(r"$t$")
+ax.set_ylabel(r"$y_t$")
+ax.xaxis.grid(color="grey", linestyle="-", linewidth=0.5, alpha=0.5)
+ax.yaxis.grid(color="grey", linestyle="-", linewidth=0.5, alpha=0.5)
 ax.legend(loc='best', frameon=True)
 
+ax = plt.subplot2grid((2, 2), (1, 0))
+ax.set_title("Investment")
+ax.plot(i_trajectory, color="tab:blue", label="Trajectory")
+ax.axhline(0, color='black', lw=0.5)
+ax.axhline(i_ss, color='tab:red', lw=1, ls='--', label='Steady State')
+ax.set_xlabel(r"$t$")
+ax.set_ylabel(r"$i_t$")
+ax.xaxis.grid(color="grey", linestyle="-", linewidth=0.5, alpha=0.5)
+ax.yaxis.grid(color="grey", linestyle="-", linewidth=0.5, alpha=0.5)
+ax.legend(loc='best', frameon=True)
+
+ax = plt.subplot2grid((2, 2), (1, 1))
+ax.set_title("Consumption")
+ax.plot(c_trajectory, color="tab:blue", label="Trajectory")
+ax.axhline(0, color='black', lw=0.5)
+ax.axhline(c_ss, color='tab:red', lw=1, ls='--', label='Steady State')
+ax.set_xlabel(r"$t$")
+ax.set_ylabel(r"$c_t$")
+ax.xaxis.grid(color="grey", linestyle="-", linewidth=0.5, alpha=0.5)
+ax.yaxis.grid(color="grey", linestyle="-", linewidth=0.5, alpha=0.5)
+ax.legend(loc='best', frameon=True)
 
 plt.tight_layout()
 
-plt.savefig(f'/Users/{getpass.getuser()}/Dropbox/PhD/Advanced Macro/PSET 0/figures/VFI Functions.pdf')
+plt.savefig(f'/Users/{getpass.getuser()}/Dropbox/PhD/Advanced Macro/PSET 0/figures/VFI Trajectories.pdf')
 plt.show()
 plt.close()
