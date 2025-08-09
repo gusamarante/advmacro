@@ -30,6 +30,10 @@ assert gamma * (1 - alpha) - 1 > 0, "parameters not valid"
 ngrid = 1000
 
 zstar = (((gamma - 1) / ((1 - alpha) * gamma - 1)) ** (1 / gamma)) * zmin
+wstar = zstar * ((1 - alpha) ** (1 - alpha) * (alpha ** alpha))
+
+print(f"Equilibrium wage is {wstar}")
+print(f"Managerial ability cutoff is {zstar}")
 
 
 pdist = pareto(b=gamma, scale=zmin)
