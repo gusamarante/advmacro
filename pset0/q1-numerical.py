@@ -84,30 +84,31 @@ print(f"Managerial ability cutoff is {zstar}")
 
 
 # ===== Plot - Income as a function of ability =====
-# ngrid = 1000
-# ent_grid = np.linspace(zstar, pdist.mean() + 3 * np.sqrt(pdist.var()), ngrid)
-#
-# size = 4
-# fig = plt.figure(figsize=(size * (16 / 9), size))
-#
-# ax = plt.subplot2grid((1, 1), (0, 0))
-# ax.set_title("Income as a function of ability")
-# ax.plot([zmin, zstar], [wstar, wstar], color="tab:blue", label="Workers")
-# ax.plot(ent_grid, [profit(ze, wstar) for ze in ent_grid], color="tab:orange", label="Entrepreneurs")
-# ax.axvline(zstar, color="tab:red", ls='--', label="$z^{\star}$")
-# ax.axhline(0, color='black', lw=0.5)
-# ax.axvline(0, color='black', lw=0.5)
-# ax.set_xlabel(r"$z$")
-# ax.set_ylabel(r"Income")
-# ax.xaxis.grid(color="grey", linestyle="-", linewidth=0.5, alpha=0.5)
-# ax.yaxis.grid(color="grey", linestyle="-", linewidth=0.5, alpha=0.5)
-# ax.legend(loc='upper left', frameon=True)
-#
-# plt.tight_layout()
-#
-# plt.savefig(f'/Users/{getpass.getuser()}/Dropbox/PhD/Advanced Macro/PSET 0/figures/SOC Ability-Income.pdf')
-# plt.show()
-# plt.close()
+ngrid = 1000
+ent_grid = np.linspace(zstar, pdist.mean() + 3 * np.sqrt(pdist.var()), ngrid)
+
+size = 4
+fig = plt.figure(figsize=(size * (16 / 9), size))
+
+ax = plt.subplot2grid((1, 1), (0, 0))
+ax.set_title("Income as a function of ability")
+ax.plot([zmin, zstar], [wstar, wstar], color="tab:blue", label="Workers")
+ax.plot(ent_grid, [profit(ze, wstar) for ze in ent_grid], color="tab:orange", label="Entrepreneurs")
+ax.axvline(zstar, color="tab:red", ls='--', label="$z^{\star}$")
+ax.axhline(0, color='black', lw=0.5)
+ax.axvline(0, color='black', lw=0.5)
+ax.set_xlabel(r"$z$")
+ax.set_ylabel(r"Income")
+ax.xaxis.grid(color="grey", linestyle="-", linewidth=0.5, alpha=0.5)
+ax.yaxis.grid(color="grey", linestyle="-", linewidth=0.5, alpha=0.5)
+ax.legend(loc='upper left', frameon=True)
+
+plt.tight_layout()
+
+plt.savefig(f'/Users/{getpass.getuser()}/Dropbox/PhD/Advanced Macro/PSET 0/figures/SOC Ability-Income.pdf')
+plt.show()
+plt.close()
+
 
 # ===== Plot - Income distribution =====
 ngrid = 1000
