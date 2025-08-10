@@ -34,6 +34,12 @@ def labor_demand(z, w):
 def profit(z, w):
     return (1 - alpha) * ((alpha / w) ** (alpha / (1 - alpha))) * (z ** (1 / (1 - alpha)))
 
+def inv_profit(i, w):
+    return (i ** (1 - alpha)) / (((1 - alpha) ** (1 - alpha)) * ((alpha / w) ** alpha))
+
+def inv_profit_deriv(i, w):
+    return ((w * (1 - alpha)) / (alpha * i)) ** alpha
+
 def cutoff(w):  # zbar
     return w / ((1 - alpha) ** (1 - alpha)*(alpha ** alpha))
 
@@ -52,11 +58,95 @@ def total_demand(zbar, w):  # LHS of the equilibrium condition
 def excess_demand(w):
     return total_demand(cutoff(w), w) - pdist.cdf(cutoff(w))
 
+def income_cdf(i):
+    if i < wstar:
+        return 0
+    else:
+        return pdist.cdf(inv_profit(i, wstar))
+
+def income_pdf(i):
+    if i < wstar:
+        return 0
+    else:
+        return pdist.pdf(inv_profit(i, wstar)) * inv_profit_deriv(i, wstar)
+
 
 res = root_scalar(excess_demand, x0=0.5, rtol=1e-5)
 
 if not res.converged:
     raise ArithmeticError("Equilibrium wage not found")
 
-print(f"Equilibrium wage is {res.root}")
-print(f"Managerial ability cutoff is {cutoff(res.root)}")
+
+wstar = res.root
+zstar = cutoff(res.root)
+print(f"Equilibrium wage is {wstar}")
+print(f"Managerial ability cutoff is {zstar}")
+
+
+# ===== Plot - Income as a function of ability =====
+# ngrid = 1000
+# ent_grid = np.linspace(zstar, pdist.mean() + 3 * np.sqrt(pdist.var()), ngrid)
+#
+# size = 4
+# fig = plt.figure(figsize=(size * (16 / 9), size))
+#
+# ax = plt.subplot2grid((1, 1), (0, 0))
+# ax.set_title("Income as a function of ability")
+# ax.plot([zmin, zstar], [wstar, wstar], color="tab:blue", label="Workers")
+# ax.plot(ent_grid, [profit(ze, wstar) for ze in ent_grid], color="tab:orange", label="Entrepreneurs")
+# ax.axvline(zstar, color="tab:red", ls='--', label="$z^{\star}$")
+# ax.axhline(0, color='black', lw=0.5)
+# ax.axvline(0, color='black', lw=0.5)
+# ax.set_xlabel(r"$z$")
+# ax.set_ylabel(r"Income")
+# ax.xaxis.grid(color="grey", linestyle="-", linewidth=0.5, alpha=0.5)
+# ax.yaxis.grid(color="grey", linestyle="-", linewidth=0.5, alpha=0.5)
+# ax.legend(loc='upper left', frameon=True)
+#
+# plt.tight_layout()
+#
+# plt.savefig(f'/Users/{getpass.getuser()}/Dropbox/PhD/Advanced Macro/PSET 0/figures/SOC Ability-Income.pdf')
+# plt.show()
+# plt.close()
+
+# ===== Plot - Income distribution =====
+ngrid = 1000
+igrid = np.linspace(
+    start=0,
+    stop=profit(
+        z=pdist.mean() + 3 * np.sqrt(pdist.var()),
+        w=wstar,
+    ),
+    num=ngrid,
+)
+
+size = 4
+fig = plt.figure(figsize=(size * (16 / 9), size))
+
+ax = plt.subplot2grid((1, 2), (0, 0))
+ax.set_title("Density")
+ax.plot(igrid, [income_pdf(ii) for ii in igrid], color="tab:blue", label="PDF")
+ax.axvline(wstar, color="tab:orange", ls='--', label="Equilibrium Wage")
+ax.axhline(0, color='black', lw=0.5)
+ax.axvline(0, color='black', lw=0.5)
+ax.set_xlabel(r"Income")
+ax.xaxis.grid(color="grey", linestyle="-", linewidth=0.5, alpha=0.5)
+ax.yaxis.grid(color="grey", linestyle="-", linewidth=0.5, alpha=0.5)
+ax.legend(loc='upper right', frameon=True)
+
+ax = plt.subplot2grid((1, 2), (0, 1))
+ax.set_title("Cumulative Distribution")
+ax.plot(igrid, [income_cdf(ii) for ii in igrid], color="tab:blue", label="CDF")
+ax.axvline(wstar, color="tab:orange", ls='--', label="Equilibrium Wage")
+ax.axhline(0, color='black', lw=0.5)
+ax.axvline(0, color='black', lw=0.5)
+ax.set_xlabel(r"Income")
+ax.xaxis.grid(color="grey", linestyle="-", linewidth=0.5, alpha=0.5)
+ax.yaxis.grid(color="grey", linestyle="-", linewidth=0.5, alpha=0.5)
+ax.legend(loc='lower right', frameon=True)
+
+plt.tight_layout()
+
+plt.savefig(f'/Users/{getpass.getuser()}/Dropbox/PhD/Advanced Macro/PSET 0/figures/SOC Income Distribution.pdf')
+plt.show()
+plt.close()

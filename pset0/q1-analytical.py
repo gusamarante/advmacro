@@ -42,10 +42,11 @@ zgrid = np.linspace(pdist.support()[0], pdist.mean() + 3 * np.sqrt(pdist.var()),
 density = pdist.pdf(zgrid)
 
 share_entre = 1 - pdist.cdf(zstar)
+print(f"Share of entrepreneurs is {share_entre}")
 
 
 # ===== Plot of the trajectory =====
-size = 5
+size = 4
 fig = plt.figure(figsize=(size * (16 / 9), size))
 
 ax = plt.subplot2grid((1, 1), (0, 0))
