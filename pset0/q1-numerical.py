@@ -101,6 +101,9 @@ second_moment = share_work * (wstar**2) + share_entre * quad_vec(lambda i: incom
 stdev_income = np.sqrt(second_moment - avg_income**2)
 print(f"Standard Deviation of Income is {stdev_income}")
 
+avg_firm_size = total_demand(zstar, wstar) / (1 - share_entre)
+print(f"Avgerage Firm Size is {avg_firm_size}")
+
 
 # ===== Plot - Income as a function of ability =====
 ngrid = 1000
@@ -168,32 +171,5 @@ ax.legend(loc='lower right', frameon=True)
 plt.tight_layout()
 
 plt.savefig(f'/Users/{getpass.getuser()}/Dropbox/PhD/Advanced Macro/PSET 0/figures/SOC Income Distribution.pdf')
-plt.show()
-plt.close()
-
-
-# ===== Plot - Gini Index =====
-# TODO still wrong
-zgini = np.linspace(pdist.support()[0], pdist.mean() + 3 * np.sqrt(pdist.var()), ngrid)
-igini = [income(z) for z in zgini]
-zcdf = pdist.cdf(zgini)
-icdf = [income_cdf(i) for i in igini]
-
-size = 4
-fig = plt.figure(figsize=(size * (16 / 9), size))
-
-ax = plt.subplot2grid((1, 1), (0, 0))
-ax.set_title("Gini Index")
-ax.plot(zcdf, icdf, color="tab:blue")
-ax.axhline(0, color='black', lw=0.5)
-ax.axvline(0, color='black', lw=0.5)
-ax.set_xlabel(r"Income")
-ax.xaxis.grid(color="grey", linestyle="-", linewidth=0.5, alpha=0.5)
-ax.yaxis.grid(color="grey", linestyle="-", linewidth=0.5, alpha=0.5)
-# ax.legend(loc='upper right', frameon=True)
-
-plt.tight_layout()
-
-plt.savefig(f'/Users/{getpass.getuser()}/Dropbox/PhD/Advanced Macro/PSET 0/figures/SOC Gini.pdf')
 plt.show()
 plt.close()
