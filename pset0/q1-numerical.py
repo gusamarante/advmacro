@@ -21,7 +21,7 @@ import getpass
 
 
 # Parameters
-alpha = 0.2  # Production function (0<alpha<1)
+alpha = 0.4  # Production function (0<alpha<1)
 zmin = 1  # Minimum of the pareto distribution (>0)
 gamma = 3 # Pareto distribution parameter (>2 to have variance)
 assert gamma * (1 - alpha) - 1 > 0, "parameters not valid"
