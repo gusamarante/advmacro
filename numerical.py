@@ -7,7 +7,7 @@ from scipy.stats import norm
 
 class DicreteAR1:
     """
-    Tauchen's method for discretizing a continuous state space.
+    Discretization a continuous state space.
 
     z_t = rho * z_{t-1} + sigma * e_t, where e_t ~ N(0, 1).
     """
