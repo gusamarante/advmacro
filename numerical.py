@@ -88,3 +88,17 @@ class Tauchen:
                         - norm.cdf((z_j - self.rho * z_i - self.omega / 2) / self.sigma_eps)
                     )
         return pi
+
+
+class Rouwenhorst:
+    # TODO documentation
+
+    def __init__(self):
+        # TODO Documentation
+        # TODO Implement
+        pass
+
+    def simulate(self):
+        # TODO Documentation
+        # TODO Implement
+        pass
