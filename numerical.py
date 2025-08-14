@@ -5,14 +5,14 @@ import numpy as np
 from scipy.stats import norm
 
 
-class Tauchen:
+class DicreteAR1:
     """
     Tauchen's method for discretizing a continuous state space.
 
     z_t = rho * z_{t-1} + sigma * e_t, where e_t ~ N(0, 1).
     """
 
-    def __init__(self, n, rho, sigma_eps, m=3):
+    def __init__(self, n, rho, sigma_eps, method="tauchen", m=3):
         """
         Initialize the Tauchen object.
 
@@ -27,21 +27,25 @@ class Tauchen:
         sigma_eps: float
             Standard deviation of the shock
 
+        method: str
+            Determines the method used for discretization. Either "tauchen" or
+            "rouwenhorst".
+
         m: float
             Number of standard deviations of z to consider for the coverage of
-            the grid (default is 3)
+            the grid (default is 3). Only used if method is "tauchen".
         """
         self.n = n
         self.rho = rho
         self.sigma_eps = sigma_eps
         self.sigma_z = sigma_eps / ((1 - rho ** 2) ** 0.5)
-        self.grid = np.linspace(
-            start=-m * self.sigma_z,
-            stop=m * self.sigma_z,
-            num=n,
-        )
-        self.omega = np.diff(self.grid)[0]
-        self.transition_matrix = self._compute_probs()
+
+        if method == "tauchen":
+            self.grid, self.transmat = self._tauchen_probs(m)
+        elif method == "rouwenhorst":
+            self.grid, self.transmat = self._rouwenhorst_probs()
+        else:
+            raise ValueError("Method must be either 'tauchen' or 'rouwenhorst'")
 
     def simulate(self, n_periods):
         """
@@ -59,7 +63,7 @@ class Tauchen:
         """
         r0 = np.random.randint(0, self.n)
         rands = np.random.random(size=n_periods)
-        cdf = np.cumsum(self.transition_matrix, axis=1)
+        cdf = np.cumsum(self.transmat, axis=1)
         z_simul = np.zeros(n_periods)
 
         for count, r in enumerate(rands):
@@ -68,37 +72,53 @@ class Tauchen:
 
         return z_simul
 
-    def _compute_probs(self):
+    def _tauchen_probs(self, m):
+        grid = np.linspace(
+            start=-m * self.sigma_z,
+            stop=m * self.sigma_z,
+            num=self.n,
+        )
+        omega = np.diff(grid)[0]
         pi = np.zeros((self.n, self.n))
 
         for i in range(self.n):
             for j in range(self.n):
-                z_j = self.grid[j]
-                z_i = self.grid[i]
+                z_j = grid[j]
+                z_i = grid[i]
 
                 if j == 0:
-                    pi[i, j] = norm.cdf((z_j - self.rho * z_i + self.omega / 2) / self.sigma_eps)
+                    pi[i, j] = norm.cdf((z_j - self.rho * z_i + omega / 2) / self.sigma_eps)
 
                 elif j == self.n - 1:
-                    pi[i, j] = 1 - norm.cdf((z_j - self.rho * z_i - self.omega / 2) / self.sigma_eps)
+                    pi[i, j] = 1 - norm.cdf((z_j - self.rho * z_i - omega / 2) / self.sigma_eps)
 
                 else:
                     pi[i, j] = (
-                        norm.cdf((z_j - self.rho * z_i + self.omega / 2) / self.sigma_eps)
-                        - norm.cdf((z_j - self.rho * z_i - self.omega / 2) / self.sigma_eps)
+                        norm.cdf((z_j - self.rho * z_i + omega / 2) / self.sigma_eps)
+                        - norm.cdf((z_j - self.rho * z_i - omega / 2) / self.sigma_eps)
                     )
-        return pi
+        return grid, pi
 
+    def _rouwenhorst_probs(self):
+        p = (1 + self.rho) / 2
+        pi = np.array([
+            [p, 1 - p],
+            [1 - p, p],
+        ])
+        for i in range(2, self.n):
+            pi = (
+                    p * np.r_[np.c_[pi, np.zeros(i)] , [np.zeros(i + 1)]]
+                    + (1 - p) * np.r_[np.c_[np.zeros(i), pi] , [np.zeros(i + 1)]]
+                    + p * np.r_[[np.zeros(i+1)] ,  np.c_[np.zeros(i), pi]]
+                    + (1 - p) * np.r_[[np.zeros(i+1)] ,  np.c_[pi, np.zeros(i)]]
+            )
+            pi[1:-1, :] = pi[1:-1, :] / 2
 
-class Rouwenhorst:
-    # TODO documentation
+        m = np.sqrt(self.n - 1)
+        grid = np.linspace(
+            start=-m * self.sigma_z,
+            stop=m * self.sigma_z,
+            num=self.n,
+        )
 
-    def __init__(self):
-        # TODO Documentation
-        # TODO Implement
-        pass
-
-    def simulate(self):
-        # TODO Documentation
-        # TODO Implement
-        pass
+        return grid, pi

@@ -1,23 +1,31 @@
 """
-Discretization of AR(1) process using Tauchen's method.
+Discretization of AR(1)
 
 The output chart shows a histogram of the simulated values from the discretized
 AR(1) process and the theoretical normal distribution for comparison.
 """
-from numerical import Tauchen
+from numerical import DicreteAR1
 import numpy as np
 from scipy.stats import norm
 import pandas as pd
 import matplotlib.pyplot as plt
 
+# TODO Implement compare both methods
+#  simulated series with same seed
+#  histogram with theoretical
+#  rho close to 1
 
-n_grid = 100
-rho = 0.7
-sigma_eps = 1.5**0.5
 
-tar = Tauchen(n=n_grid, rho=rho, sigma_eps=sigma_eps, m=4)
-print(tar.grid)
-print(tar.transition_matrix)
+n_grid = 5
+rho = 0.9
+sigma_eps = 0.1
+
+tar = DicreteAR1(n=n_grid, rho=rho, sigma_eps=sigma_eps, method="rouwenhorst", m=3)
+print("Grid")
+print(pd.Series(tar.grid).round(3))
+
+print("Transition Matrix")
+print(pd.DataFrame(tar.transmat).round(3))
 
 data = pd.Series(tar.simulate(n_periods=50000))
 
