@@ -142,3 +142,36 @@ class DicreteAR1:
         )
 
         return grid, pi
+
+
+def create_grid(n, min_val, max_val, grid_growth=0.01):
+    """
+    Creat a grid of n points between min_val and max_val with a specified
+    growth rate.
+
+    Parameters
+    ----------
+    n: int
+        Number of points in the grid
+
+    min_val: float
+        Minimum value of the grid
+
+    max_val: float
+        Maximum value of the grid
+
+    grid_growth: float
+        Growth rate of the grid. If 0, the grid is linear. If > 0, the grid is
+        exponentially spaced.
+    """
+    if grid_growth == 0.0:
+        grid =  np.linspace(min_val, max_val, n)
+
+    elif grid_growth > 0.0:
+        grid = np.zeros(n)
+        for i in range(n):
+            grid[i] = min_val + (max_val - min_val) * ((1 + grid_growth)**i -1) / ((1 + grid_growth)**(n - 1.0) - 1)
+    else:
+        raise ValueError("grid_growth must be non-negative")
+
+    return grid

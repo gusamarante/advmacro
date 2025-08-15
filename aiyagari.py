@@ -1,7 +1,7 @@
 """
 Solve the Aiyagari Model
 """
-from numerical import DicreteAR1
+from numerical import DicreteAR1, create_grid
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -17,11 +17,11 @@ w = 1.2872  # Wage  # TODO remove from here
 
 
 # Solution method parameters
-na = 1000  # Number of points in the asset grid
+na = 100  # Number of points in the asset grid
 ns = 7  # Number of points in the AR(1) grid
 a_max = 250  # Upper bound of the asset grid
 maxiter_vfi = 1000  # Break point for the value function iteration
-tol_vfi = 1e-4  # Convergence toletance for the value function iteration
+tol_vfi = 1e-2  # Convergence tolerance for the value function iteration
 
 
 def utility(c, g):
@@ -38,6 +38,7 @@ def utility(c, g):
 
 # Discrete grid for assets
 grid_a = np.linspace(start=-phi, stop=a_max, num=na)
+# grid_a = create_grid(na, -phi, a_max, 0.02)
 
 # Discrete grid for the AR(1)
 dar = DicreteAR1(
@@ -87,7 +88,7 @@ else:
 pa = grid_a[policy_idx]
 
 # Cash on hand grid
-coh = (1 + r) * grid_a.reshape(-1, 1) + w * grid_s.reshape(1, -1)
+coh = (1 + r) * grid_a[:, None] + w * np.exp(grid_s[None, :])
 
 # Consumption policy function
 pc = np.maximum(coh - pa, 0)
