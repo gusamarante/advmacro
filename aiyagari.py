@@ -7,19 +7,19 @@ import numpy as np
 
 
 # Structural Parameters
-gamma = 1.3  # Intertemporal elasticity of substitution
+gamma = 2  # Intertemporal elasticity of substitution
 phi = 0  # credit constraint
-rho = 0.7  # Persistence of income shock
-sigma_eps = 1.5  # Standard deviation of income shock process
-beta = 0.98  # Impatience discount factor
-r = 0.04  # Interest rate  # TODO remove from here
-w = 2  # Wage  # TODO remove from here
+rho = 0.9  # Persistence of income shock
+sigma_eps = 0.1  # Standard deviation of income shock process
+beta = 0.96  # Impatience discount factor
+r = 0.0377  # Interest rate  # TODO remove from here
+w = 1.2872  # Wage  # TODO remove from here
 
 
 # Solution method parameters
-na = 100  # Number of points in the asset grid
-ns = 10  # Number of points in the AR(1) grid
-a_max = 300  # Upper bound of the asset grid
+na = 1000  # Number of points in the asset grid
+ns = 7  # Number of points in the AR(1) grid
+a_max = 250  # Upper bound of the asset grid
 maxiter_vfi = 1000  # Break point for the value function iteration
 tol_vfi = 1e-4  # Convergence toletance for the value function iteration
 
@@ -44,7 +44,7 @@ dar = DicreteAR1(
     n=ns,
     rho=rho,
     sigma_eps=sigma_eps,
-    method='tauchen',
+    method='rouwenhorst',
     m=3,
 )
 grid_s, inv_dist_s, transmat_s = dar.grid, dar.inv_dist, dar.transmat
@@ -66,7 +66,7 @@ for ii in range(maxiter_vfi):  # ii-th iteration of the value function
         for ai_idx, ai in enumerate(grid_a):
             c_choices = (1 + r) * ai + w * np.exp(sj) - grid_a  # Possibilities of consumption over the grid of a
             u_choices = utility(c_choices, gamma)
-            rhs = u_choices + cont_val[ai_idx, sj_idx] # RHS of the discrete bellman equation
+            rhs = u_choices + cont_val[:, sj_idx] # RHS of the discrete bellman equation
             V_new[ai_idx, sj_idx] = np.max(rhs)  # Get the maximum value of rhs
             policy_idx[ai_idx, sj_idx] = np.argmax(rhs)
 
@@ -83,43 +83,63 @@ else:
     # Max iterations reached
     raise ArithmeticError('Maximum iterations reached. No convergence of the value function')
 
-print(grid_a[policy_idx])
+# Policy function
+pa = grid_a[policy_idx]
+
+# Cash on hand grid
+coh = (1 + r) * grid_a.reshape(-1, 1) + w * grid_s.reshape(1, -1)
+
+# Consumption policy function
+pc = np.maximum(coh - pa, 0)
 
 
-
-
-
-
-
-# ===== Plot of the Functions =====
+# ===== Plot Value Functions =====
 size = 4
 fig = plt.figure(figsize=(size * (16 / 7.3), size))
 
-ax = plt.subplot2grid((1, 2), (0, 0))
+ax = plt.subplot2grid((1, 1), (0, 0))
 ax.set_title("Value Function")
-ax.plot(grid_a, V[:, 0], label=fr"s={round(grid_s[0], 2)}")
-ax.plot(grid_a, V[:, int(ns/2)], label=fr"s={round(grid_s[int(ns/2)])}")
-ax.plot(grid_a, V[:, -1], label=fr"s={round(grid_s[-1], 2)}")
-# ax.axhline(0, color='black', lw=0.5)
-# ax.axvline(0, color='black', lw=0.5)
+for ii in range(ns):
+    ax.plot(grid_a, V[:, ii], label=fr"s={round(np.exp(grid_s[ii]), 2)}")
+ax.axvline(0, color='black', lw=0.5)
 ax.set_xlabel(r"$a$")
 ax.set_ylabel(r"$V\left(a,s\right)$")
 ax.xaxis.grid(color="grey", linestyle="-", linewidth=0.5, alpha=0.5)
 ax.yaxis.grid(color="grey", linestyle="-", linewidth=0.5, alpha=0.5)
-ax.legend(loc='upper left', frameon=True)
+ax.legend(loc='best', frameon=True)
 
-# ax = plt.subplot2grid((1, 2), (0, 1))
-# ax.set_title("Policy Function")
-# ax.plot(gk, policy_function, color="tab:green")
-# ax.axhline(0, color='black', lw=0.5)
-# ax.axvline(0, color='black', lw=0.5)
-# ax.axline((0, 0), (1, 1), color="grey", ls='--', lw=0.5, label="45-degree line")
-# ax.scatter(k_ss, k_ss, color="tab:red", label="steady state")
-# ax.set_xlabel(r"$k_t$")
-# ax.set_ylabel(r"$k_{t+1}$")
-# ax.xaxis.grid(color="grey", linestyle="-", linewidth=0.5, alpha=0.5)
-# ax.yaxis.grid(color="grey", linestyle="-", linewidth=0.5, alpha=0.5)
-# ax.legend(loc='upper left', frameon=True)
+plt.tight_layout()
+
+# plt.savefig(f'/Users/{getpass.getuser()}/Dropbox/PhD/Advanced Macro/PSET 0/figures/VFI Functions.pdf')
+plt.show()
+plt.close()
+
+
+# ===== Plot Policy Functions =====
+size = 4
+fig = plt.figure(figsize=(size * (16 / 7.3), size))
+
+ax = plt.subplot2grid((1, 2), (0, 0))
+ax.set_title("Savings Policy $a^\prime=g_a(a,s)$")
+for ii in range(ns):
+    ax.plot(grid_a, pa[:, ii], label=fr"s={round(np.exp(grid_s[ii]), 2)}")
+ax.set_xlabel(r"$a$")
+ax.set_ylabel(r"$a^\prime$")
+ax.xaxis.grid(color="grey", linestyle="-", linewidth=0.5, alpha=0.5)
+ax.yaxis.grid(color="grey", linestyle="-", linewidth=0.5, alpha=0.5)
+ax.legend(loc='best', frameon=True)
+
+ax = plt.subplot2grid((1, 2), (0, 1))
+ax.set_title(r"Policy Function $c=g_c(a,s)$")
+for ii in range(ns):
+    ax.plot(grid_a, pc[:, ii], label=fr"s={round(np.exp(grid_s[ii]), 2)}")
+ax.axhline(0, color='black', lw=0.5)
+ax.axvline(0, color='black', lw=0.5)
+ax.set_xlabel(r"$a$")
+ax.set_ylabel(r"$c$")
+ax.xaxis.grid(color="grey", linestyle="-", linewidth=0.5, alpha=0.5)
+ax.yaxis.grid(color="grey", linestyle="-", linewidth=0.5, alpha=0.5)
+ax.legend(loc='best', frameon=True)
 
 plt.tight_layout()
 
