@@ -5,10 +5,10 @@ The output chart shows a histogram of the simulated values from the discretized
 AR(1) process and the theoretical normal distribution for comparison.
 """
 from numerical import DicreteAR1
-import numpy as np
+import matplotlib.pyplot as plt
 from scipy.stats import norm
 import pandas as pd
-import matplotlib.pyplot as plt
+import numpy as np
 
 # TODO Implement compare both methods
 #  simulated series with same seed
