@@ -4,7 +4,7 @@ Discretization of AR(1)
 The output chart shows a histogram of the simulated values from the discretized
 AR(1) process and the theoretical normal distribution for comparison.
 """
-from numerical import DicreteAR1
+from numerical import DiscreteAR1
 import matplotlib.pyplot as plt
 from scipy.stats import norm
 import pandas as pd
@@ -20,7 +20,7 @@ n_grid = 5
 rho = 0.9
 sigma_eps = 0.1
 
-tar = DicreteAR1(n=n_grid, rho=rho, sigma_eps=sigma_eps, method="rouwenhorst", m=3)
+tar = DiscreteAR1(n=n_grid, rho=rho, sigma_eps=sigma_eps, method="rouwenhorst", m=3)
 print("Grid")
 print(pd.Series(tar.grid).round(3))
 

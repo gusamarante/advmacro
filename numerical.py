@@ -5,7 +5,7 @@ import numpy as np
 from scipy.stats import norm
 
 
-class DicreteAR1:
+class DiscreteAR1:
     """
     Discretization a continuous state space.
 

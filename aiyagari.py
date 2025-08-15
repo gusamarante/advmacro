@@ -1,7 +1,7 @@
 """
 Solve the Aiyagari Model
 """
-from numerical import DicreteAR1, create_grid
+from numerical import DiscreteAR1, create_grid
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -12,16 +12,16 @@ phi = 0  # credit constraint
 rho = 0.9  # Persistence of income shock
 sigma_eps = 0.1  # Standard deviation of income shock process
 beta = 0.96  # Impatience discount factor
-r = 0.0377  # Interest rate  # TODO remove from here
-w = 1.2872  # Wage  # TODO remove from here
+r = 0.04  # Interest rate  # TODO remove from here
+w = 1.0  # Wage  # TODO remove from here
 
 
 # Solution method parameters
-na = 100  # Number of points in the asset grid
-ns = 7  # Number of points in the AR(1) grid
-a_max = 250  # Upper bound of the asset grid
+na = 1000  # Number of points in the asset grid
+ns = 5  # Number of points in the AR(1) grid
+a_max = 10  # Upper bound of the asset grid
 maxiter_vfi = 1000  # Break point for the value function iteration
-tol_vfi = 1e-2  # Convergence tolerance for the value function iteration
+tol_vfi = 1e-8  # Convergence tolerance for the value function iteration
 
 
 def utility(c, g):
@@ -41,7 +41,7 @@ grid_a = np.linspace(start=-phi, stop=a_max, num=na)
 # grid_a = create_grid(na, -phi, a_max, 0.02)
 
 # Discrete grid for the AR(1)
-dar = DicreteAR1(
+dar = DiscreteAR1(
     n=ns,
     rho=rho,
     sigma_eps=sigma_eps,
@@ -61,13 +61,13 @@ for ii in range(maxiter_vfi):  # ii-th iteration of the value function
 
     V_new = np.empty_like(V)
 
-    cont_val = beta * (V @ transmat_s.T)  # Continuation value (s_j, a_k)
+    cont_val =  (V @ transmat_s.T)  # Continuation value (s_j, a_k)
 
     for sj_idx, sj in enumerate(grid_s):  # Iterate on every possible state
         for ai_idx, ai in enumerate(grid_a):
             c_choices = (1 + r) * ai + w * np.exp(sj) - grid_a  # Possibilities of consumption over the grid of a
             u_choices = utility(c_choices, gamma)
-            rhs = u_choices + cont_val[:, sj_idx] # RHS of the discrete bellman equation
+            rhs = u_choices + beta * cont_val[:, sj_idx] # RHS of the discrete bellman equation
             V_new[ai_idx, sj_idx] = np.max(rhs)  # Get the maximum value of rhs
             policy_idx[ai_idx, sj_idx] = np.argmax(rhs)
 
