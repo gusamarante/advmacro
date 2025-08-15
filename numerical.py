@@ -34,6 +34,17 @@ class DicreteAR1:
         m: float
             Number of standard deviations of z to consider for the coverage of
             the grid (default is 3). Only used if method is "tauchen".
+
+        Attributes
+        ----------
+        grid: numpy.ndarry
+            discrete grid for z
+
+        transmat: numpy.ndarray
+            transition matrix of the markov chain
+
+        inv_dist: numpy.ndarray
+            invariant/stationary distribution of z
         """
         self.n = n
         self.rho = rho
@@ -46,6 +57,8 @@ class DicreteAR1:
             self.grid, self.transmat = self._rouwenhorst_probs()
         else:
             raise ValueError("Method must be either 'tauchen' or 'rouwenhorst'")
+
+        self.inv_dist = self._get_inv_dist()
 
     def simulate(self, n_periods):
         """
@@ -71,6 +84,13 @@ class DicreteAR1:
             r0 = self.n - (cdf[r0] >= r).sum()
 
         return z_simul
+
+    def _get_inv_dist(self):
+        eigvals, eigvecs = np.linalg.eig(self.transmat.T)
+        idx = np.argmin(np.abs(eigvals - 1))  # Find index of eigenvalue 1
+        v = np.real(eigvecs[:, idx])  # Get the corresponding eigenvector and correct for possible numerical values
+        v = v / v.sum()  # Normalize to sum to 1
+        return v
 
     def _tauchen_probs(self, m):
         grid = np.linspace(
