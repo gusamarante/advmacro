@@ -82,13 +82,13 @@ for ii in range(maxiter):  # ii-th iteration of the value function
         print(f'Convergence achieved after {ii + 1} iteations')
         break
 
-    # Check max iterations
-    if ii > maxiter:
-        print('Maximum iterations reached. No convergence of the value function')
-        break
-
     V_iters.loc[ii] = V
     V = V_new
+
+else:
+    # Max iterations reached
+    raise ArithmeticError('Maximum iterations reached. No convergence of the value function')
+
 
 # Compute the policy function and interpolate
 policy_function = gk[policy_idx]  # k-prime as a function of state k
