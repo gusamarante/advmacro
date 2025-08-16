@@ -9,8 +9,8 @@ import numpy as np
 # Structural Parameters
 gamma = 2  # Intertemporal elasticity of substitution
 phi = 0  # credit constraint
-rho = 0.9  # Persistence of income shock
-sigma_eps = 0.1  # Standard deviation of income shock process
+rho = 0.  # Persistence of income shock
+sigma_eps = 0.5  # Standard deviation of income shock process
 beta = 0.96  # Impatience discount factor
 r = 0.04  # Interest rate  # TODO remove from here
 w = 1.0  # Wage  # TODO remove from here
@@ -19,9 +19,9 @@ w = 1.0  # Wage  # TODO remove from here
 # Solution method parameters
 na = 1000  # Number of points in the asset grid
 ns = 5  # Number of points in the AR(1) grid
-a_max = 10  # Upper bound of the asset grid
+a_max = 5000  # Upper bound of the asset grid
 maxiter_vfi = 1000  # Break point for the value function iteration
-tol_vfi = 1e-8  # Convergence tolerance for the value function iteration
+tol_vfi = 1e-4  # Convergence tolerance for the value function iteration
 
 
 def utility(c, g):
@@ -37,8 +37,8 @@ def utility(c, g):
 
 
 # Discrete grid for assets
-grid_a = np.linspace(start=-phi, stop=a_max, num=na)
-# grid_a = create_grid(na, -phi, a_max, 0.02)
+# grid_a = np.linspace(start=-phi, stop=a_max, num=na)
+grid_a = create_grid(na, -phi, a_max, 0.02)
 
 # Discrete grid for the AR(1)
 dar = DiscreteAR1(
@@ -69,7 +69,7 @@ for ii in range(maxiter_vfi):  # ii-th iteration of the value function
             u_choices = utility(c_choices, gamma)
             rhs = u_choices + beta * cont_val[:, sj_idx] # RHS of the discrete bellman equation
             V_new[ai_idx, sj_idx] = np.max(rhs)  # Get the maximum value of rhs
-            policy_idx[ai_idx, sj_idx] = np.argmax(rhs)
+            policy_idx[ai_idx, sj_idx] = np.argmax(rhs)  # TODO this can be done only once, after V converges
 
     diff = np.abs(V_new - V).max()
     V = V_new
@@ -84,14 +84,19 @@ else:
     # Max iterations reached
     raise ArithmeticError('Maximum iterations reached. No convergence of the value function')
 
-# Policy function
+# Assets policy function
 pa = grid_a[policy_idx]
+assert np.all(np.diff(pa, axis=0) >= 0), "Asset policy function not monotone"
+assert pa[-1, -1] < a_max, "Asset policy function binding on the upper grid. `a_max` may be too small"
+print(f"borrowing should bind for low income state, and it is {pa[0,0]} (Should be equal to phi)")  # TODO may not be true fir high base wages
 
 # Cash on hand grid
 coh = (1 + r) * grid_a[:, None] + w * np.exp(grid_s[None, :])
 
 # Consumption policy function
-pc = np.maximum(coh - pa, 0)
+pc = coh - pa
+assert np.all(np.diff(pc, axis=0) >= 0), "Resulting policy function for consumption is not monotone"
+assert np.all(pc >= 0), "Resulting policy function for consumption is not always positive"
 
 
 # ===== Plot Value Functions =====
