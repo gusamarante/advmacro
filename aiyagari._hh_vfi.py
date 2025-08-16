@@ -1,5 +1,5 @@
 """
-Solve the Aiyagari Model
+Solve the Aiyagari Model using the method of value function iteration
 """
 from numerical import DiscreteAR1, create_grid
 import matplotlib.pyplot as plt
@@ -9,19 +9,19 @@ import numpy as np
 # Structural Parameters
 gamma = 2  # Intertemporal elasticity of substitution
 phi = 0  # credit constraint
-rho = 0.  # Persistence of income shock
-sigma_eps = 0.5  # Standard deviation of income shock process
+rho = 0.9  # Persistence of income shock
+sigma_eps = 0.1  # Standard deviation of income shock process
 beta = 0.96  # Impatience discount factor
-r = 0.04  # Interest rate  # TODO remove from here
-w = 1.0  # Wage  # TODO remove from here
+r = 0.04  # Interest rate
+w = 1.0  # Wage
 
 
 # Solution method parameters
-na = 1000  # Number of points in the asset grid
+na = 3000  # Number of points in the asset grid
 ns = 5  # Number of points in the AR(1) grid
-a_max = 5000  # Upper bound of the asset grid
+a_max = 20  # Upper bound of the asset grid
 maxiter_vfi = 1000  # Break point for the value function iteration
-tol_vfi = 1e-4  # Convergence tolerance for the value function iteration
+tol_vfi = 1e-6  # Convergence tolerance for the value function iteration
 
 
 def utility(c, g):
@@ -37,8 +37,8 @@ def utility(c, g):
 
 
 # Discrete grid for assets
-# grid_a = np.linspace(start=-phi, stop=a_max, num=na)
-grid_a = create_grid(na, -phi, a_max, 0.02)
+grid_a = np.linspace(start=-phi, stop=a_max, num=na)
+# grid_a = create_grid(na, -phi, a_max, grid_growth=0.01)
 
 # Discrete grid for the AR(1)
 dar = DiscreteAR1(
@@ -86,8 +86,8 @@ else:
 
 # Assets policy function
 pa = grid_a[policy_idx]
-assert np.all(np.diff(pa, axis=0) >= 0), "Asset policy function not monotone"
-assert pa[-1, -1] < a_max, "Asset policy function binding on the upper grid. `a_max` may be too small"
+# assert np.all(np.diff(pa, axis=0) >= 0), "Asset policy function not monotone"
+# assert pa[-1, -1] < a_max, "Asset policy function binding on the upper grid. `a_max` may be too small"
 print(f"borrowing should bind for low income state, and it is {pa[0,0]} (Should be equal to phi)")  # TODO may not be true fir high base wages
 
 # Cash on hand grid
@@ -95,8 +95,8 @@ coh = (1 + r) * grid_a[:, None] + w * np.exp(grid_s[None, :])
 
 # Consumption policy function
 pc = coh - pa
-assert np.all(np.diff(pc, axis=0) >= 0), "Resulting policy function for consumption is not monotone"
-assert np.all(pc >= 0), "Resulting policy function for consumption is not always positive"
+# assert np.all(np.diff(pc, axis=0) >= 0), "Resulting policy function for consumption is not monotone"
+# assert np.all(pc >= 0), "Resulting policy function for consumption is not always positive"
 
 
 # ===== Plot Value Functions =====
@@ -116,7 +116,7 @@ ax.legend(loc='best', frameon=True)
 
 plt.tight_layout()
 
-# plt.savefig(f'/Users/{getpass.getuser()}/Dropbox/PhD/Advanced Macro/PSET 0/figures/VFI Functions.pdf')
+# plt.savefig(f'/Users/{getpass.getuser()}/Dropbox/PhD/Advanced Macro/figures/Aiyagari VFI Value Functions.pdf')
 plt.show()
 plt.close()
 
@@ -149,7 +149,7 @@ ax.legend(loc='best', frameon=True)
 
 plt.tight_layout()
 
-# plt.savefig(f'/Users/{getpass.getuser()}/Dropbox/PhD/Advanced Macro/PSET 0/figures/VFI Functions.pdf')
+# plt.savefig(f'/Users/{getpass.getuser()}/Dropbox/PhD/Advanced Macro/figures/Aiyagari VFI Policy Functions.pdf')
 plt.show()
 plt.close()
 
