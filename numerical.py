@@ -60,7 +60,7 @@ class DiscreteAR1:
 
         self.inv_dist = self._get_inv_dist()
 
-    def simulate(self, n_periods):
+    def simulate(self, n_periods, seed=None):
         """
         Simulate the discretized process for a given number of periods.
 
@@ -69,13 +69,17 @@ class DiscreteAR1:
         n_periods: int
             Number of periods to simulate
 
+        seed: int
+            Random seed for numpy
+
         Returns
         -------
         z_simul: np.ndarray
             Simulated values of the discretized process
         """
-        r0 = np.random.randint(0, self.n)
-        rands = np.random.random(size=n_periods)
+        rng = np.random.default_rng(seed)
+        r0 = rng.integers(0, self.n)
+        rands = rng.random(size=n_periods)
         cdf = np.cumsum(self.transmat, axis=1)
         z_simul = np.zeros(n_periods)
 
