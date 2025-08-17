@@ -1,23 +1,20 @@
 """
 Discretization of AR(1)
-
-The output chart shows a histogram of the simulated values from the discretized
-AR(1) process and the theoretical normal distribution for comparison.
 """
 from numerical import DiscreteAR1
 import matplotlib.pyplot as plt
 from scipy.stats import norm
 import pandas as pd
 import numpy as np
+import getpass
 
 # TODO Implement compare both methods
-#  simulated series with same seed
 #  histogram with theoretical
 #  rho close to 1
 
 
-n_grid = 20
-rho = 0.9
+n_grid = 10
+rho = 0.99
 sigma_eps = 0.1
 n_periods = 1000
 random_seed = 666
@@ -36,25 +33,28 @@ print("rouwenhorst \n", pd.DataFrame(arr.transmat).round(3))
 data_t = pd.Series(art.simulate(n_periods=n_periods, seed=random_seed))
 data_r = pd.Series(arr.simulate(n_periods=n_periods, seed=random_seed))
 
+print(f"The correlation of the two series is {data_t.corr(data_r)}")
+
+
 
 # ===== Plot Simulated Series =====
 size = 4
 fig = plt.figure(figsize=(size * (16 / 9), size))
 
 ax = plt.subplot2grid((1, 1), (0, 0))
-ax.set_title("Simulated Series")
 ax.plot(data_t, label="Tauchen")
 ax.plot(data_r, label="Rouwenhorst")
 ax.axvline(0, color='black', lw=0.5)
-ax.set_xlabel(r"$a$")
-ax.set_ylabel(r"$V\left(a,s\right)$")
+ax.axhline(0, color='black', lw=0.5)
+ax.set_xlabel(r"Periods $t$")
+ax.set_ylabel(r"$z_t$")
 ax.xaxis.grid(color="grey", linestyle="-", linewidth=0.5, alpha=0.5)
 ax.yaxis.grid(color="grey", linestyle="-", linewidth=0.5, alpha=0.5)
 ax.legend(loc='best', frameon=True)
 
 plt.tight_layout()
 
-# plt.savefig(f'/Users/{getpass.getuser()}/Dropbox/PhD/Advanced Macro/figures/Aiyagari VFI Value Functions.pdf')  # TODO save and add to notes
+plt.savefig(f'/Users/{getpass.getuser()}/Dropbox/PhD/Advanced Macro/figures/Discrete AR1 Simulated Series.pdf')
 plt.show()
 plt.close()
 
