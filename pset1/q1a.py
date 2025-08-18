@@ -1,12 +1,6 @@
 """
 Discretization of AR(1) Process
 """
-
-# TODO
-#  Simulated trajectories
-#  Invariant dist plot (two methods + theoretical)(AR follows a normal?)
-
-
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
