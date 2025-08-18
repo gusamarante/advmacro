@@ -12,6 +12,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import getpass
 from numerical import DiscreteAR1
+from scipy.stats import norm
 
 
 # ======================================
@@ -111,13 +112,83 @@ plt.close()
 # ==================================
 # ===== Invariant Distribution =====
 # ==================================
-options_ns = [3, 9, 21, 41]
-rho = 0.8
+options_ns = [5, 21, 51]
+rho = 0.99
 sigma = 0.1
 
+size = 6
+fig = plt.figure(figsize=(size * (16 / 9), size))
 
 
 for idx, ns in enumerate(options_ns):
-    tar = DiscreteAR1(ns, rho, sigma, 'tauchen')
+    tar = DiscreteAR1(ns, rho, sigma, 'tauchen', m=4)
     rar = DiscreteAR1(ns, rho, sigma, 'rouwenhorst')
 
+    ax = plt.subplot2grid((3, 2), (idx, 0))
+    ax.set_title(rf"Tauchen and $n_S={ns}$")
+    omega = np.mean(np.diff(tar.grid))
+    ax.bar(tar.grid, tar.inv_dist / omega, edgecolor='white', width=omega)
+    normal_grid = np.linspace(min(tar.grid), max(tar.grid), 1000)
+    ax.plot(
+        normal_grid,
+        norm.pdf(normal_grid, 0, sigma / ((1 - rho ** 2) ** 0.5)),
+        color='red',
+        ls='--',
+        lw=2,
+    )
+    ax.set_xlim(-3, 3)
+
+
+    ax = plt.subplot2grid((3, 2), (idx, 1))
+    ax.set_title(rf"Rouwenhorst and $n_S={ns}$")
+    omega = np.mean(np.diff(rar.grid))
+    ax.bar(rar.grid, rar.inv_dist / omega, edgecolor='white', width=omega)
+    normal_grid = np.linspace(min(rar.grid), max(rar.grid), 1000)
+    ax.plot(
+        normal_grid,
+        norm.pdf(normal_grid, 0, sigma / ((1 - rho ** 2) ** 0.5)),
+        color='red',
+        ls='--',
+        lw=2,
+    )
+    ax.set_xlim(-3, 3)
+
+plt.tight_layout()
+
+plt.savefig(f'/Users/{getpass.getuser()}/Dropbox/PhD/Advanced Macro/PSET 1/figures/q1a invariant distribution.pdf')
+plt.show()
+plt.close()
+
+
+# ================================
+# ===== Simulated Timeseries =====
+# ================================
+options_ns = [5, 21, 51]
+rho = 0.9
+sigma = 0.1
+n_periods = 800
+seed = 666
+
+size = 6
+fig = plt.figure(figsize=(size * (16 / 9), size))
+
+
+for idx, ns in enumerate(options_ns):
+    tar = DiscreteAR1(ns, rho, sigma, 'tauchen', m=4)
+    rar = DiscreteAR1(ns, rho, sigma, 'rouwenhorst')
+
+    ax = plt.subplot2grid((3, 1), (idx, 0))
+    ax.set_title(rf"$n_S={ns}$")
+    ax.plot(tar.simulate(n_periods, seed), color="tab:blue", label='Tauchen')
+    ax.plot(rar.simulate(n_periods, seed), color="tab:orange", label='Rouwenhorst')
+    ax.axhline(0, color='black', lw=0.5)
+    ax.set_ylabel(r"$z_t$")
+    ax.xaxis.grid(color="grey", linestyle="-", linewidth=0.5, alpha=0.5)
+    ax.yaxis.grid(color="grey", linestyle="-", linewidth=0.5, alpha=0.5)
+    ax.legend(loc='best', frameon=True)
+
+plt.tight_layout()
+
+plt.savefig(f'/Users/{getpass.getuser()}/Dropbox/PhD/Advanced Macro/PSET 1/figures/q1a simulated trajectories.pdf')
+plt.show()
+plt.close()
