@@ -13,7 +13,7 @@ beta = 0.96
 gamma = 2
 phi = 0
 rho = 0.9
-sigma = 0.5
+sigma = 0.1
 r = 0.03
 w = 1
 
@@ -98,7 +98,7 @@ for ii in range(ns):
 
 # ===== Plot Policy Functions =====
 size = 5
-fig = plt.figure(figsize=(size * (16 / 9), size))
+fig = plt.figure(figsize=(size * (16 / 5), size))
 
 ax = plt.subplot2grid((1, 2), (0, 0))
 ax.set_title("Savings Policy $a^\prime=g_a(a,s)$")

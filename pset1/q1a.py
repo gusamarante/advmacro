@@ -42,7 +42,7 @@ results = results.drop('true var', axis=1)
 
 # --- Plot of the trajectory ---
 size = 6
-fig = plt.figure(figsize=(size * (16 / 9), size))
+fig = plt.figure(figsize=(size * (16 / 7), size))
 
 rhop, sigmap = 0, 0.1
 df2plot = results[(results['sigma'] == sigmap) & (results['rho'] == rhop)].pivot(index='ns', columns='method', values='var')
@@ -111,7 +111,7 @@ rho = 0.99
 sigma = 0.1
 
 size = 6
-fig = plt.figure(figsize=(size * (16 / 9), size))
+fig = plt.figure(figsize=(size * (16 / 7), size))
 
 
 for idx, ns in enumerate(options_ns):
@@ -164,7 +164,7 @@ n_periods = 800
 seed = 666
 
 size = 6
-fig = plt.figure(figsize=(size * (16 / 9), size))
+fig = plt.figure(figsize=(size * (16 / 7), size))
 
 
 for idx, ns in enumerate(options_ns):
