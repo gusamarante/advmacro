@@ -111,6 +111,8 @@ for s in range(ns):
                 transfunc[a * ns + s, nu * ns + sp] = prob_s * p
                 transfunc[a * ns + s, (nu + 1) * ns + sp] = prob_s * (1 - p)
 
+# TODO compute invariant distribution
+
 
 # ===== Plot Policy Functions =====
 size = 5
