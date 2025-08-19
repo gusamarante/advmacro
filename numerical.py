@@ -58,7 +58,7 @@ class DiscreteAR1:
         else:
             raise ValueError("Method must be either 'tauchen' or 'rouwenhorst'")
 
-        self.inv_dist = self._get_inv_dist()
+        self.inv_dist = stationary_dist(self.transmat.T)
 
     def simulate(self, n_periods, seed=None):
         """
@@ -88,13 +88,6 @@ class DiscreteAR1:
             r0 = self.n - (cdf[r0] >= r).sum()
 
         return z_simul
-
-    def _get_inv_dist(self):
-        eigvals, eigvecs = np.linalg.eig(self.transmat.T)  # TODO this transpose is confusing
-        idx = np.argmin(np.abs(eigvals - 1))  # Find index of eigenvalue 1
-        v = np.real(eigvecs[:, idx])  # Get the corresponding eigenvector and correct for possible numerical values
-        v = v / v.sum()  # Normalize to sum to 1
-        return v
 
     def _tauchen_probs(self, m):
         grid = np.linspace(
@@ -179,3 +172,29 @@ def create_grid(n, min_val, max_val, grid_growth=0.01):
         raise ValueError("grid_growth must be non-negative")
 
     return grid
+
+
+def stationary_dist(transmat, tol=1e-6, maxiter=5000, verbose=False):
+    # TODO Documentation
+    #  Transmat columns adds up to 1
+
+    transmat = np.maximum(transmat, 0)
+    n = transmat.shape[0]
+    stat_dist = np.ones(n) / n  # Initial guess  # TODO Can this be better?
+
+    for ii in range(maxiter):
+        stat_dist_out = transmat @ stat_dist
+        stat_dist_out /= stat_dist_out.sum()
+        d = np.max(np.abs(stat_dist_out - stat_dist))
+
+        if ii % 10 == 0:
+            if verbose:
+                print(f"Iteration {ii}: d={d}")
+
+        stat_dist = stat_dist_out
+        if d < tol:
+            break
+    else:
+        raise ArithmeticError('Maximum iterations reached. Convergence not achieved')
+
+    return stat_dist

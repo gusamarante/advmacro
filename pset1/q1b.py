@@ -1,7 +1,7 @@
 """
 Solve the Aiyagari Model using the endogenous grid method
 """
-from numerical import DiscreteAR1, create_grid
+from numerical import DiscreteAR1, create_grid, stationary_dist
 from scipy.interpolate import interp1d
 import matplotlib.pyplot as plt
 import numpy as np
@@ -23,7 +23,7 @@ ns = 7
 amax = 250
 grid_growth = 0.025
 maxiter = 2000
-tol = 1e-12
+tol = 1e-4
 
 # Discrete grid for the AR(1)
 dar = DiscreteAR1(n=ns, rho=rho, sigma_eps=sigma, method='rouwenhorst')
@@ -111,39 +111,41 @@ for s in range(ns):
                 transfunc[a * ns + s, nu * ns + sp] = prob_s * p
                 transfunc[a * ns + s, (nu + 1) * ns + sp] = prob_s * (1 - p)
 
-# TODO compute invariant distribution
+stat_dist = stationary_dist(transfunc.T, tol, verbose=True)
 
+plt.plot(stat_dist)
+plt.show()
 
 # ===== Plot Policy Functions =====
-size = 5
-fig = plt.figure(figsize=(size * (16 / 5), size))
-
-ax = plt.subplot2grid((1, 2), (0, 0))
-ax.set_title("Savings Policy $a^\prime=g_a(a,s)$")
-for ii in range(ns):
-    ax.plot(grid_a, pa[:, ii], label=fr"s={round(grid_s[ii], 2)}")
-ax.set_xlabel(r"$a$")
-ax.set_ylabel(r"$a^\prime$")
-ax.axhline(0, color='black', lw=0.5)
-ax.axvline(0, color='black', lw=0.5)
-ax.xaxis.grid(color="grey", linestyle="-", linewidth=0.5, alpha=0.5)
-ax.yaxis.grid(color="grey", linestyle="-", linewidth=0.5, alpha=0.5)
-ax.legend(loc='upper left', frameon=True)
-
-ax = plt.subplot2grid((1, 2), (0, 1))
-ax.set_title(r"Policy Function $c=g_c(a,s)$")
-for ii in range(ns):
-    ax.plot(grid_a, pc[:, ii], label=fr"s={round(grid_s[ii], 2)}")
-ax.axhline(0, color='black', lw=0.5)
-ax.axvline(0, color='black', lw=0.5)
-ax.set_xlabel(r"$a$")
-ax.set_ylabel(r"$c$")
-ax.xaxis.grid(color="grey", linestyle="-", linewidth=0.5, alpha=0.5)
-ax.yaxis.grid(color="grey", linestyle="-", linewidth=0.5, alpha=0.5)
-ax.legend(loc='lower right', frameon=True)
-
-plt.tight_layout()
-
-plt.savefig(f'/Users/{getpass.getuser()}/Dropbox/PhD/Advanced Macro/PSET 1/figures/q1b policy functions rho {rho} sigma {sigma}.pdf')
-plt.show()
-plt.close()
+# size = 5
+# fig = plt.figure(figsize=(size * (16 / 5), size))
+#
+# ax = plt.subplot2grid((1, 2), (0, 0))
+# ax.set_title("Savings Policy $a^\prime=g_a(a,s)$")
+# for ii in range(ns):
+#     ax.plot(grid_a, pa[:, ii], label=fr"s={round(grid_s[ii], 2)}")
+# ax.set_xlabel(r"$a$")
+# ax.set_ylabel(r"$a^\prime$")
+# ax.axhline(0, color='black', lw=0.5)
+# ax.axvline(0, color='black', lw=0.5)
+# ax.xaxis.grid(color="grey", linestyle="-", linewidth=0.5, alpha=0.5)
+# ax.yaxis.grid(color="grey", linestyle="-", linewidth=0.5, alpha=0.5)
+# ax.legend(loc='upper left', frameon=True)
+#
+# ax = plt.subplot2grid((1, 2), (0, 1))
+# ax.set_title(r"Policy Function $c=g_c(a,s)$")
+# for ii in range(ns):
+#     ax.plot(grid_a, pc[:, ii], label=fr"s={round(grid_s[ii], 2)}")
+# ax.axhline(0, color='black', lw=0.5)
+# ax.axvline(0, color='black', lw=0.5)
+# ax.set_xlabel(r"$a$")
+# ax.set_ylabel(r"$c$")
+# ax.xaxis.grid(color="grey", linestyle="-", linewidth=0.5, alpha=0.5)
+# ax.yaxis.grid(color="grey", linestyle="-", linewidth=0.5, alpha=0.5)
+# ax.legend(loc='lower right', frameon=True)
+#
+# plt.tight_layout()
+#
+# plt.savefig(f'/Users/{getpass.getuser()}/Dropbox/PhD/Advanced Macro/PSET 1/figures/q1b policy functions rho {rho} sigma {sigma}.pdf')
+# plt.show()
+# plt.close()
