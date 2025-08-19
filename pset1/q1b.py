@@ -96,6 +96,22 @@ for ii in range(ns):
     except ValueError:
         continue
 
+
+# ===== Transition Function =====
+transfunc = np.zeros((na * ns, na * ns))
+for s in range(ns):
+    for sp in range(ns):
+        for a in range(na):
+            prob_s = transmat_s[s, sp]  # TODO summarize this
+            nu = np.searchsorted(grid_a, pa[a, s])
+            if nu == na - 1:
+                transfunc[a * ns + s, nu * ns + sp] = prob_s
+            else:
+                p = (grid_a[nu + 1] - pa[a, s]) / (grid_a[nu + 1] - grid_a[nu])
+                transfunc[a * ns + s, nu * ns + sp] = prob_s * p
+                transfunc[a * ns + s, (nu + 1) * ns + sp] = prob_s * (1 - p)
+
+
 # ===== Plot Policy Functions =====
 size = 5
 fig = plt.figure(figsize=(size * (16 / 5), size))

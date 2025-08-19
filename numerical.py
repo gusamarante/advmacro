@@ -90,7 +90,7 @@ class DiscreteAR1:
         return z_simul
 
     def _get_inv_dist(self):
-        eigvals, eigvecs = np.linalg.eig(self.transmat.T)
+        eigvals, eigvecs = np.linalg.eig(self.transmat.T)  # TODO this transpose is confusing
         idx = np.argmin(np.abs(eigvals - 1))  # Find index of eigenvalue 1
         v = np.real(eigvecs[:, idx])  # Get the corresponding eigenvector and correct for possible numerical values
         v = v / v.sum()  # Normalize to sum to 1
