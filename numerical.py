@@ -12,7 +12,7 @@ class DiscreteAR1:
     z_t = rho * z_{t-1} + sigma * e_t, where e_t ~ N(0, 1).
     """
 
-    def __init__(self, n, rho, sigma_eps, method="tauchen", m=3):
+    def __init__(self, n, rho, sigma_eps, method="tauchen", m=3, tol=1e-6, maxiter=5000):
         """
         Initialize the Tauchen object.
 
@@ -58,7 +58,7 @@ class DiscreteAR1:
         else:
             raise ValueError("Method must be either 'tauchen' or 'rouwenhorst'")
 
-        self.inv_dist = stationary_dist(self.transmat.T)
+        self.inv_dist = stationary_dist(self.transmat.T, tol=tol, maxiter=maxiter)
 
     def simulate(self, n_periods, seed=None):
         """
@@ -187,7 +187,7 @@ def stationary_dist(transmat, tol=1e-6, maxiter=5000, verbose=False):
         stat_dist_out /= stat_dist_out.sum()
         d = np.max(np.abs(stat_dist_out - stat_dist))
 
-        if ii % 10 == 0:
+        if ii % 50 == 0:
             if verbose:
                 print(f"Iteration {ii}: d={d}")
 

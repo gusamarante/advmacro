@@ -1,6 +1,8 @@
 """
 Solve the Aiyagari Model using the endogenous grid method
 """
+import pandas as pd
+
 from numerical import DiscreteAR1, create_grid, stationary_dist
 from scipy.interpolate import interp1d
 import matplotlib.pyplot as plt
@@ -18,15 +20,15 @@ r = 0.03
 w = 1
 
 # Numerical Parameters
-na = 1000
+na = 200
 ns = 7
-amax = 250
+amax = 90
 grid_growth = 0.025
-maxiter = 2000
-tol = 1e-4
+maxiter = 10_000
+tol = 1e-6
 
 # Discrete grid for the AR(1)
-dar = DiscreteAR1(n=ns, rho=rho, sigma_eps=sigma, method='rouwenhorst')
+dar = DiscreteAR1(n=ns, rho=rho, sigma_eps=sigma, method='rouwenhorst', tol=tol, maxiter=maxiter)
 grid_s, inv_dist_s, transmat_s = np.exp(dar.grid), dar.inv_dist, dar.transmat
 
 # Discrete grid for assets
@@ -78,7 +80,7 @@ for ii in range(maxiter):
     pc = cp_new
     pa = ap_new
 
-    if ii % 10 == 0:
+    if ii % 50 == 0:
         print(f"Iteration {ii} with diff = {diff}")
 
     if diff < tol:
@@ -111,10 +113,8 @@ for s in range(ns):
                 transfunc[a * ns + s, nu * ns + sp] = prob_s * p
                 transfunc[a * ns + s, (nu + 1) * ns + sp] = prob_s * (1 - p)
 
-stat_dist = stationary_dist(transfunc.T, tol, verbose=True)
-
-plt.plot(stat_dist)
-plt.show()
+stat_dist = stationary_dist(transfunc.T, tol=tol, verbose=True, maxiter=maxiter)
+stat_dist = stat_dist.reshape(na, ns)
 
 # ===== Plot Policy Functions =====
 # size = 5
@@ -149,3 +149,63 @@ plt.show()
 # plt.savefig(f'/Users/{getpass.getuser()}/Dropbox/PhD/Advanced Macro/PSET 1/figures/q1b policy functions rho {rho} sigma {sigma}.pdf')
 # plt.show()
 # plt.close()
+
+
+# ===== Plot A condtional on S =====
+size = 5
+fig = plt.figure(figsize=(size * (16 / 5), size))
+
+ax = plt.subplot2grid((1, 1), (0, 0))
+ax.set_title("Distributions of $a$ conditional on $s$")
+for ii in range(ns):
+    ax.plot(grid_a, stat_dist[:, ii] / stat_dist[:, ii].sum(), label=fr"s={round(grid_s[ii], 2)}")
+ax.set_xlabel(r"$a$")
+ax.set_ylabel("Density")
+ax.axhline(0, color='black', lw=0.5)
+ax.axvline(0, color='black', lw=0.5)
+ax.xaxis.grid(color="grey", linestyle="-", linewidth=0.5, alpha=0.5)
+ax.yaxis.grid(color="grey", linestyle="-", linewidth=0.5, alpha=0.5)
+ax.legend(loc='best', frameon=True)
+
+plt.tight_layout()
+
+# plt.savefig(f'/Users/{getpass.getuser()}/Dropbox/PhD/Advanced Macro/PSET 1/figures/q1b policy functions rho {rho} sigma {sigma}.pdf')
+plt.show()
+plt.close()
+
+
+# ===== Plot Stationary Distribution =====
+size = 5
+fig = plt.figure(figsize=(size * (16 / 5), size))
+
+ax = plt.subplot2grid((1, 2), (0, 0))
+ax.set_title("Distribution of $s$")
+ax.plot(grid_s, inv_dist_s, label="from AR(1)")
+ax.plot(grid_s, stat_dist.sum(axis=0), label="from invariant distribution")
+ax.set_xlabel(r"$s$")
+ax.set_ylabel("Density")
+ax.axhline(0, color='black', lw=0.5)
+ax.axvline(0, color='black', lw=0.5)
+ax.xaxis.grid(color="grey", linestyle="-", linewidth=0.5, alpha=0.5)
+ax.yaxis.grid(color="grey", linestyle="-", linewidth=0.5, alpha=0.5)
+ax.legend(loc='best', frameon=True)
+
+ax = plt.subplot2grid((1, 2), (0, 1))
+ax.set_title("Distribution of $a$")
+ax.plot(grid_a, stat_dist.sum(axis=1), label="from invariant distribution")
+ax.axhline(0, color='black', lw=0.5)
+ax.axvline(0, color='black', lw=0.5)
+ax.set_xlabel(r"$a$")
+ax.set_ylabel("Density")
+ax.xaxis.grid(color="grey", linestyle="-", linewidth=0.5, alpha=0.5)
+ax.yaxis.grid(color="grey", linestyle="-", linewidth=0.5, alpha=0.5)
+ax.legend(loc='best', frameon=True)
+
+plt.tight_layout()
+
+# plt.savefig(f'/Users/{getpass.getuser()}/Dropbox/PhD/Advanced Macro/PSET 1/figures/q1b policy functions rho {rho} sigma {sigma}.pdf')
+plt.show()
+plt.close()
+
+
+pd.DataFrame(grid_a).to_clipboard()
