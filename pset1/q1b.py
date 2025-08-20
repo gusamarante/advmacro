@@ -39,7 +39,7 @@ grid_a_2d = np.repeat(grid_a, ns).reshape(na, ns)
 grid_s_2d = np.repeat(grid_s, na).reshape(ns, na).T
 grid_coh = grid_s_2d * w + (1 + r) * grid_a_2d
 
-pc = grid_coh - grid_a_2d  # TODO PAREI AQUI
+pc = grid_coh - grid_a_2d
 pa = np.zeros((na, ns))
 
 
@@ -99,6 +99,7 @@ for ii in range(ns):
         continue
 
 
+# TODO BATIDO ATÉ AQUI
 # ===== Transition Function =====
 transfunc = np.zeros((na * ns, na * ns))
 for s in range(ns):

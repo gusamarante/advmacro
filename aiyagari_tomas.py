@@ -170,18 +170,14 @@ def solveHHproblemEGM(param, r, w):
         # ===== Perform EGM ===== #
         expect = beta * (1.0 + r) * np.matmul(cp ** (-gamma),
                                               transS.T)  # Right hand side of Euler Eq.
-        c = expect ** (
-                    -1.0 / gamma)  # Invert marginal util to get contemporaneous C
-        endogAA = (c + gAA - w * gSS) / (
-                    1 + r)  # compute asset state on endogenous grid (note that gAA is the policy function, which is on-grid)
+        c = expect ** (-1.0 / gamma)  # Invert marginal util to get contemporaneous C
+        endogAA = (c + gAA - w * gSS) / (1 + r)  # compute asset state on endogenous grid (note that gAA is the policy function, which is on-grid)
 
         # === Interpolate to find the correct asset policy function
-        apNew = np.zeros(
-            (nA, nS))  # here we store the policy function that we interpolate
+        apNew = np.zeros((nA, nS))  # here we store the policy function that we interpolate
 
         for iS in range(nS):
-            interpolate_y(endogAA[:, iS], gA, gA,
-                          apNew[:, iS])  # perform interpolation
+            interpolate_y(endogAA[:, iS], gA, gA, apNew[:, iS])  # perform interpolation
             # Must account for the binding constraint!
             for ia in range(nA):
                 if apNew[ia, iS] < gA[0]:

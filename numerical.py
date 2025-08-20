@@ -177,6 +177,7 @@ def create_grid(n, min_val, max_val, grid_growth=0.01):
 def stationary_dist(transmat, tol=1e-6, maxiter=5000, verbose=False):
     # TODO Documentation
     #  Transmat columns adds up to 1
+    #  Try using sparse matrix
 
     transmat = np.maximum(transmat, 0)
     n = transmat.shape[0]
