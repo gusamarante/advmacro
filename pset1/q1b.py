@@ -16,16 +16,16 @@ gamma = 2
 phi = 0
 rho = 0.9
 sigma = 0.1
-r = 0.03
+r = 0.04
 w = 1
 
 # Numerical Parameters
-na = 200
+na = 300
 ns = 7
-amax = 90
+amax = 250
 grid_growth = 0.025
-maxiter = 10_000
-tol = 1e-6
+maxiter = 2_000
+tol = 1e-11
 
 # Discrete grid for the AR(1)
 dar = DiscreteAR1(n=ns, rho=rho, sigma_eps=sigma, method='rouwenhorst', tol=tol, maxiter=maxiter)
