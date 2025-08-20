@@ -39,7 +39,7 @@ grid_a_2d = np.repeat(grid_a, ns).reshape(na, ns)
 grid_s_2d = np.repeat(grid_s, na).reshape(ns, na).T
 grid_coh = grid_s_2d * w + (1 + r) * grid_a_2d
 
-pc = grid_coh - grid_a_2d
+pc = grid_coh - grid_a_2d  # TODO PAREI AQUI
 pa = np.zeros((na, ns))
 
 
@@ -56,10 +56,10 @@ for ii in range(maxiter):
     endog_ap = (current_c + grid_a_2d - w * grid_s_2d) / (1 + r)
 
     # Interpolate to find the correct asset policy function
-    ap_new = np.zeros((na, ns))
+    pa_new = np.zeros((na, ns))
 
     for s_idx in range(ns):
-        ap_new[:, s_idx] = interp1d(
+        pa_new[:, s_idx] = interp1d(
             x=endog_ap[:, s_idx],  # Sample x, the endogenous grid of assets
             y=grid_a,  # Sample y - the asset grid
             kind='linear',
@@ -68,17 +68,17 @@ for ii in range(maxiter):
 
         # Check if credit constraint is valid
         for a_idx in range(na):
-            if ap_new[a_idx, s_idx] < - phi:
-                ap_new[a_idx, s_idx] = - phi
+            if pa_new[a_idx, s_idx] < - phi:
+                pa_new[a_idx, s_idx] = - phi
             else:
                 break # we can stop searching after the kink due to monotonicity
 
-    cp_new = grid_coh - ap_new
+    pc_new = grid_coh - pa_new
 
     # Check convergence
-    diff = np.max(np.abs(cp_new - pc))
-    pc = cp_new
-    pa = ap_new
+    diff = np.max(np.abs(pc_new - pc))
+    pc = pc_new
+    pa = pa_new
 
     if ii % 50 == 0:
         print(f"Iteration {ii} with diff = {diff}")
