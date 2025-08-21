@@ -24,7 +24,7 @@ na = 300
 ns = 7
 amax = 250
 grid_growth = 0.025
-maxiter = 2_000
+maxiter = 50_000
 tol = 1e-11
 
 # Discrete grid for the AR(1)
@@ -99,23 +99,66 @@ for ii in range(ns):
         continue
 
 
-# TODO BATIDO ATÉ AQUI
-# ===== Transition Function =====
-transfunc = np.zeros((na * ns, na * ns))
-for s in range(ns):
-    for sp in range(ns):
-        for a in range(na):
-            prob_s = transmat_s[s, sp]  # TODO summarize this
-            nu = np.searchsorted(grid_a, pa[a, s])
-            if nu == na - 1:
-                transfunc[a * ns + s, nu * ns + sp] = prob_s
-            else:
-                p = (grid_a[nu + 1] - pa[a, s]) / (grid_a[nu + 1] - grid_a[nu])
-                transfunc[a * ns + s, nu * ns + sp] = prob_s * p
-                transfunc[a * ns + s, (nu + 1) * ns + sp] = prob_s * (1 - p)
 
-stat_dist = stationary_dist(transfunc.T, tol=tol, verbose=True, maxiter=maxiter)
-stat_dist = stat_dist.reshape(na, ns)
+# ===== Non-Stochastic Simulation =====
+nus = np.zeros((na, ns), dtype=int)  # Indexes of the lower bound of the intervals for the non-stochastic simulation
+ps = np.zeros((na, ns))  # "probability" to be assined to the lower bound of the interval of the non-stochastic simulation
+
+for s in range(ns):
+    nus[:, s] = np.searchsorted(grid_a, pa[:, s], side='right') - 1  # index of the upper bound of the interval
+    a_low = grid_a[nus[:, s]]
+    a_high = grid_a[np.minimum(nus[:, s] + 1, na - 1)]
+    ps[:, s] = (a_high - pa[:, s]) / (a_high - a_low)
+
+ps = np.maximum(np.minimum(ps, 1), 0)
+
+# ===== Stationary Distribution =====
+# We could iterate on every point of the transition matrix, but since its size
+# is (na*ns X na*ns) and it is sparse, we can do something smarter. We iterate
+# the stationary distribution directly and update only the values of its
+# relevant indexes
+
+stat_dist = np.ones((na, ns)) / (na * ns)
+
+# There is no point in building the full transition function, we iterate the stationary distribution directly, only in the relevant indexes
+for ii in range(maxiter):  # TODO speed this up
+
+    stat_dist_new = np.zeros((na, ns))
+    for s in range(ns):
+        for a in range(na):
+            if stat_dist[a, s] > 0:  # If the stationary distribution already converged to zero, do not waste time on these  # TODO test this
+                stat_dist_new[nus[a, s], s] += ps[a, s] * stat_dist[a, s]
+                stat_dist_new[np.minimum(nus[a, s] + 1, na - 1), s] += (1 - ps[a, s]) * stat_dist[a, s]
+    stat_dist_new = stat_dist_new @ transmat_s
+
+    d = np.max(np.abs(stat_dist - stat_dist_new))
+    stat_dist = stat_dist_new
+
+    if ii % 50 == 0:
+        print(f"Iteration {ii} with diff = {d}")
+
+    if d < tol:
+        print(f'Convergence achieved after {ii + 1} iteations')
+        break
+
+else:
+    raise ArithmeticError('Maximum iterations reached. Convergence not achieved')
+
+# TODO BATIDO ATÉ AQUI
+# for s in range(ns):
+#     for sp in range(ns):
+#         for a in range(na):
+#             prob_s = transmat_s[s, sp]  # TODO summarize this
+#             nu = min(np.searchsorted(grid_a, pa[a, s]), na - 1)
+#             if nu == na - 1:
+#                 transfunc[a * ns + s, nu * ns + sp] = prob_s
+#             else:
+#                 p = (grid_a[nu + 1] - pa[a, s]) / (grid_a[nu + 1] - grid_a[nu])
+#                 transfunc[a * ns + s, nu * ns + sp] = prob_s * p
+#                 transfunc[a * ns + s, (nu + 1) * ns + sp] = prob_s * (1 - p)
+#
+# stat_dist = stationary_dist(transfunc.T, tol=tol, verbose=True, maxiter=50_000)
+# stat_dist = stat_dist.reshape(na, ns)
 
 # ===== Plot Policy Functions =====
 # size = 5
@@ -153,60 +196,57 @@ stat_dist = stat_dist.reshape(na, ns)
 
 
 # ===== Plot A condtional on S =====
-size = 5
-fig = plt.figure(figsize=(size * (16 / 5), size))
-
-ax = plt.subplot2grid((1, 1), (0, 0))
-ax.set_title("Distributions of $a$ conditional on $s$")
-for ii in range(ns):
-    ax.plot(grid_a, stat_dist[:, ii] / stat_dist[:, ii].sum(), label=fr"s={round(grid_s[ii], 2)}")
-ax.set_xlabel(r"$a$")
-ax.set_ylabel("Density")
-ax.axhline(0, color='black', lw=0.5)
-ax.axvline(0, color='black', lw=0.5)
-ax.xaxis.grid(color="grey", linestyle="-", linewidth=0.5, alpha=0.5)
-ax.yaxis.grid(color="grey", linestyle="-", linewidth=0.5, alpha=0.5)
-ax.legend(loc='best', frameon=True)
-
-plt.tight_layout()
-
-# plt.savefig(f'/Users/{getpass.getuser()}/Dropbox/PhD/Advanced Macro/PSET 1/figures/q1b policy functions rho {rho} sigma {sigma}.pdf')
-plt.show()
-plt.close()
+# size = 5
+# fig = plt.figure(figsize=(size * (16 / 5), size))
+#
+# ax = plt.subplot2grid((1, 1), (0, 0))
+# ax.set_title("Distributions of $a$ conditional on $s$")
+# for ii in range(ns):
+#     ax.plot(grid_a, stat_dist[:, ii] / stat_dist[:, ii].sum(), label=fr"s={round(grid_s[ii], 2)}")
+# ax.set_xlabel(r"$a$")
+# ax.set_ylabel("Density")
+# ax.axhline(0, color='black', lw=0.5)
+# ax.axvline(0, color='black', lw=0.5)
+# ax.xaxis.grid(color="grey", linestyle="-", linewidth=0.5, alpha=0.5)
+# ax.yaxis.grid(color="grey", linestyle="-", linewidth=0.5, alpha=0.5)
+# ax.legend(loc='best', frameon=True)
+#
+# plt.tight_layout()
+#
+# # plt.savefig(f'/Users/{getpass.getuser()}/Dropbox/PhD/Advanced Macro/PSET 1/figures/q1b policy functions rho {rho} sigma {sigma}.pdf')
+# plt.show()
+# plt.close()
 
 
 # ===== Plot Stationary Distribution =====
-size = 5
-fig = plt.figure(figsize=(size * (16 / 5), size))
-
-ax = plt.subplot2grid((1, 2), (0, 0))
-ax.set_title("Distribution of $s$")
-ax.plot(grid_s, inv_dist_s, label="from AR(1)")
-ax.plot(grid_s, stat_dist.sum(axis=0), label="from invariant distribution")
-ax.set_xlabel(r"$s$")
-ax.set_ylabel("Density")
-ax.axhline(0, color='black', lw=0.5)
-ax.axvline(0, color='black', lw=0.5)
-ax.xaxis.grid(color="grey", linestyle="-", linewidth=0.5, alpha=0.5)
-ax.yaxis.grid(color="grey", linestyle="-", linewidth=0.5, alpha=0.5)
-ax.legend(loc='best', frameon=True)
-
-ax = plt.subplot2grid((1, 2), (0, 1))
-ax.set_title("Distribution of $a$")
-ax.plot(grid_a, stat_dist.sum(axis=1), label="from invariant distribution")
-ax.axhline(0, color='black', lw=0.5)
-ax.axvline(0, color='black', lw=0.5)
-ax.set_xlabel(r"$a$")
-ax.set_ylabel("Density")
-ax.xaxis.grid(color="grey", linestyle="-", linewidth=0.5, alpha=0.5)
-ax.yaxis.grid(color="grey", linestyle="-", linewidth=0.5, alpha=0.5)
-ax.legend(loc='best', frameon=True)
-
-plt.tight_layout()
-
-# plt.savefig(f'/Users/{getpass.getuser()}/Dropbox/PhD/Advanced Macro/PSET 1/figures/q1b policy functions rho {rho} sigma {sigma}.pdf')
-plt.show()
-plt.close()
-
-
-pd.DataFrame(grid_a).to_clipboard()
+# size = 5
+# fig = plt.figure(figsize=(size * (16 / 5), size))
+#
+# ax = plt.subplot2grid((1, 2), (0, 0))
+# ax.set_title("Distribution of $s$")
+# ax.plot(grid_s, inv_dist_s, label="from AR(1)")
+# ax.plot(grid_s, stat_dist.sum(axis=0), label="from invariant distribution")
+# ax.set_xlabel(r"$s$")
+# ax.set_ylabel("Density")
+# ax.axhline(0, color='black', lw=0.5)
+# ax.axvline(0, color='black', lw=0.5)
+# ax.xaxis.grid(color="grey", linestyle="-", linewidth=0.5, alpha=0.5)
+# ax.yaxis.grid(color="grey", linestyle="-", linewidth=0.5, alpha=0.5)
+# ax.legend(loc='best', frameon=True)
+#
+# ax = plt.subplot2grid((1, 2), (0, 1))
+# ax.set_title("Distribution of $a$")
+# ax.plot(grid_a, stat_dist.sum(axis=1), label="from invariant distribution")
+# ax.axhline(0, color='black', lw=0.5)
+# ax.axvline(0, color='black', lw=0.5)
+# ax.set_xlabel(r"$a$")
+# ax.set_ylabel("Density")
+# ax.xaxis.grid(color="grey", linestyle="-", linewidth=0.5, alpha=0.5)
+# ax.yaxis.grid(color="grey", linestyle="-", linewidth=0.5, alpha=0.5)
+# ax.legend(loc='best', frameon=True)
+#
+# plt.tight_layout()
+#
+# # plt.savefig(f'/Users/{getpass.getuser()}/Dropbox/PhD/Advanced Macro/PSET 1/figures/q1b policy functions rho {rho} sigma {sigma}.pdf')
+# plt.show()
+# plt.close()

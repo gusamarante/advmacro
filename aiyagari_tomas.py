@@ -203,15 +203,14 @@ def solveHHproblemEGM(param, r, w):
 
     return ap, cp, endogAA
 
-@njit  # ps. using numba here is crucial, it speeds up quite a lot
+# @njit  # ps. using numba here is crucial, it speeds up quite a lot
 def iterationDist(dsn, dsnNew, ibelow, iweight, transS):
     nA, nS = dsn.shape
     for iA in range(nA):
         for iS in range(nS):
             if dsn[iA, iS] > 0:  # this speed a bit in some problems
                 dsnNew[ibelow[iA, iS], iS] += iweight[iA, iS] * dsn[iA, iS]
-                dsnNew[ibelow[iA, iS] + 1, iS] += (1 - iweight[iA, iS]) * dsn[
-                    iA, iS]
+                dsnNew[ibelow[iA, iS] + 1, iS] += (1 - iweight[iA, iS]) * dsn[iA, iS]
     dsnNew = dsnNew @ transS  # apply the markov-chain of labor process
     return dsnNew
 
@@ -235,9 +234,9 @@ def solveInvariant(param, decisions):
         interpolate_coord(gA, ap[:, iS], ibelow[:, iS], iweight[:, iS])
         # iweight is probability agent ends in grid "ibelow".
 
+    # TODO BATIDO ATÉ AQUI
     # ================ 2. ITERATE FORWARD DISTRIBUTION ======================== #
-    dsn = np.ones((nA, nS)) / (
-                nS * nA)  # initial guess, positive mass everywhere must sum to one
+    dsn = np.ones((nA, nS)) / (nS * nA)  # initial guess, positive mass everywhere must sum to one
 
     for iter in range(maxiterInv):
         # compute next distribution
@@ -248,7 +247,6 @@ def solveInvariant(param, decisions):
         d = np.amax(np.abs(dsn - dsnNew))
         dsn = dsnNew  # update distribution
 
-        # print("Iter: ", iter, "Tolerance: ", d)
         if d < tolInv:
             print("Tol. achieved (Inv. dist.): ", d)
             break
@@ -420,3 +418,5 @@ dsn = solveInvariant(param, dec)
 # param = setPar()
 # (decisions, dsn, w, r, Kd, Ea) = model_solution(param)
 # ModelStats(param, decisions, dsn, w, r, Kd, Ea)
+
+a = 1
