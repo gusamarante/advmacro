@@ -203,7 +203,7 @@ def solveHHproblemEGM(param, r, w):
 
     return ap, cp, endogAA
 
-# @njit  # ps. using numba here is crucial, it speeds up quite a lot
+@njit  # ps. using numba here is crucial, it speeds up quite a lot
 def iterationDist(dsn, dsnNew, ibelow, iweight, transS):
     nA, nS = dsn.shape
     for iA in range(nA):
@@ -249,6 +249,7 @@ def solveInvariant(param, decisions):
 
         if d < tolInv:
             print("Tol. achieved (Inv. dist.): ", d)
+            print(f"On iteration {iter}")
             break
 
         if iter == maxiterInv - 1:

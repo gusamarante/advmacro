@@ -1,11 +1,11 @@
 """
 Solve the Aiyagari Model using the endogenous grid method
 """
-import pandas as pd
-
 from numerical import DiscreteAR1, create_grid, stationary_dist
 from scipy.interpolate import interp1d
 import matplotlib.pyplot as plt
+from numba import njit
+import pandas as pd
 import numpy as np
 import getpass
 
@@ -120,29 +120,35 @@ ps = np.maximum(np.minimum(ps, 1), 0)
 
 stat_dist = np.ones((na, ns)) / (na * ns)
 
-# There is no point in building the full transition function, we iterate the stationary distribution directly, only in the relevant indexes
-for ii in range(maxiter):  # TODO speed this up
+@njit
+def find_stat_dist(stat_dist_init, a_idx, p_vals, transmat, maxiter, tol):
 
-    stat_dist_new = np.zeros((na, ns))
-    for s in range(ns):
-        for a in range(na):
-            if stat_dist[a, s] > 0:  # If the stationary distribution already converged to zero, do not waste time on these  # TODO test this
-                stat_dist_new[nus[a, s], s] += ps[a, s] * stat_dist[a, s]
-                stat_dist_new[np.minimum(nus[a, s] + 1, na - 1), s] += (1 - ps[a, s]) * stat_dist[a, s]
-    stat_dist_new = stat_dist_new @ transmat_s
+    # There is no point in building the full transition function, we iterate the stationary distribution directly, only in the relevant indexes
+    for ii in range(maxiter):  # TODO speed this up
 
-    d = np.max(np.abs(stat_dist - stat_dist_new))
-    stat_dist = stat_dist_new
+        stat_dist_new = np.zeros((na, ns))
+        for s in range(ns):
+            for a in range(na):
+                if stat_dist_init[a, s] > 0:  # If the stationary distribution already converged to zero, do not waste time on these  # TODO test this
+                    stat_dist_new[a_idx[a, s], s] += p_vals[a, s] * stat_dist_init[a, s]
+                    stat_dist_new[np.minimum(a_idx[a, s] + 1, na - 1), s] += (1 - p_vals[a, s]) * stat_dist_init[a, s]
+        stat_dist_new = stat_dist_new @ transmat
 
-    if ii % 50 == 0:
-        print(f"Iteration {ii} with diff = {d}")
+        d = np.max(np.abs(stat_dist_init - stat_dist_new))
+        stat_dist_init = stat_dist_new
 
-    if d < tol:
-        print(f'Convergence achieved after {ii + 1} iteations')
-        break
+        if d < tol:
+            print(f'Convergence achieved after {ii + 1} iteations')
+            break
 
-else:
-    raise ArithmeticError('Maximum iterations reached. Convergence not achieved')
+    else:
+        raise ArithmeticError('Maximum iterations reached. Convergence not achieved')
+
+    return stat_dist_init
+
+
+stat_dist = find_stat_dist(stat_dist, nus, ps, transmat_s, maxiter, tol)
+
 
 # TODO BATIDO ATÉ AQUI
 # for s in range(ns):
