@@ -169,32 +169,14 @@ class Aiyagari:
 
         return stat_dist_init
 
-    def solve_equilibrium(self):
+    def capital_demand(self, r):
         # TODO Documentation
-        #  find r and w that clears all the market and stat dist
-
-        # "brackets" for the Brent root-finding
-        r0 = 0.001  # lower bound guess (make sure excess demand is negative)
-        r1 = 1 / self.beta - 1  # upper bound guess (make sure excess demand is positive)
-
-        def _obj_func(r):
-            res = self._excess_demand(r)
-            return res[0]
-
-        # TODO tol may be too fine here
-        r = brentq(_obj_func, r0, r1, xtol=0.0001, maxiter=self.maxiter)
-
-        # TODO compute output
-        return r
-
-    def _excess_demand(self, r):
-        # TODO Documentation
-        #  excess demand
-
-        # Compute Capital Demand and implied wage from the production function
         kd = (self.alpha / (r + self.delta)) ** (1 / (1 - self.alpha)) * self.l_bar  # capital demand
         w = (1 - self.alpha) * (kd / self.l_bar) ** self.alpha
+        return kd, w
 
+    def capital_supply(self, w, r):
+        # TODO Documentation
         # Solve household
         pol_a, pol_c = self.household(w, r)
 
@@ -206,26 +188,35 @@ class Aiyagari:
 
         # Aggregate asset supply
         ks = (stat_dist * grid_a_2d).sum()
+        return ks
+
+    def _excess_demand(self, r):
+        # TODO Documentation
+        # Compute Capital Demand and implied wage from the production function
+        # kd = (self.alpha / (r + self.delta)) ** (1 / (1 - self.alpha)) * self.l_bar  # capital demand
+        # w = (1 - self.alpha) * (kd / self.l_bar) ** self.alpha
+        kd, w = self.capital_demand(r)
+
+        # Aggregate asset supply
+        ks = self.capital_supply(w, r)
 
         # Excess demand in percentage
         exc_dem = (ks - kd) / ((ks + kd) / 2)
+        return exc_dem
 
-        return exc_dem, pol_a, pol_c, stat_dist, w, kd, ks
+    def solve_equilibrium(self):
+        # TODO Documentation
+        #  find r and w that clears all the market and stat dist
 
+        # "brackets" for the Brent root-finding
+        r0 = 0.001  # lower bound guess (make sure excess demand is negative)
+        r1 = 1 / self.beta - 1  # upper bound guess (make sure excess demand is positive)
 
+        # TODO tol may be too fine here
+        r = brentq(self._excess_demand, r0, r1, xtol=0.0001, maxiter=self.maxiter)
 
+        kd, w = self.capital_demand(r)
+        pol_a, pol_c = self.household(w, r)
+        stat_dist = self.invariant_dist(pol_a)
 
-
-
-
-# ===== Example =====  # TODO encontrar condições para convergência
-ag = Aiyagari(verbose=False)
-print(ag.solve_equilibrium())
-
-# print(ag._excess_demand(0.041667)[0])
-
-# pa, pc = ag.household(1.2871715717061494, 0.0376592780519075)
-
-# stat_distri = ag.invariant_dist(pa)
-# print(stat_distri)
-# print(stat_distri.sum())
+        return pol_a, pol_c, stat_dist, kd, r, w
