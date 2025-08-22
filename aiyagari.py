@@ -6,8 +6,6 @@ import numpy as np
 
 
 class Aiyagari:
-    # TODO Documentation
-    #  Atributes
 
     def __init__(
             self,
@@ -27,7 +25,65 @@ class Aiyagari:
             tol=1e-6,
             verbose=False,
     ):
-        # TODO Documentation
+        """
+        Class to solve the Aiyagari model from
+
+            "Uninsured Idiosyncratic Risk and Aggregate Saving" by S. Rao Aiyagari
+            The Quarterly Journal of Economics
+            Vol. 109, No. 3 (Aug., 1994), pp. 659-684 (26 pages)
+            https://www.jstor.org/stable/2118417
+
+        Parameters
+        ----------
+        beta: float
+            Househould time discount factor
+
+        gamma: float
+            Intertemporal of elasticity of substitution / inverse of relative risk aversion
+
+        alpha: float
+            Cobb-Douglas production function parameter
+
+        delta: float
+            Capital depreciation rate
+
+        phi: float
+            Credit constraint / lower bound of the asset grid
+
+        rho: float
+            AR(1) coefficient for the labor income process
+
+        sigma: float
+            Standard deviation of the AR(1) shock of the labor income process
+
+        na: int
+            Size of the asset grid
+
+        ns: int
+            Number of states in the discretized AR(1) Process
+
+        amax: float
+            Upper bound of the asset grid
+
+        grid_growth: float
+            Parameter passed to the `create_grid` function to adjust the
+            concentration of points closer to the origin
+
+        ar1_method: str
+            'tauchen` or 'rouwenhorst' methods to discretize the AR(1)
+            process of labor income.
+
+        maxiter: int
+            Maximum number of iterations for ALL the numerical procedures
+            of the model (Keep it high, some of the methods need it)
+
+        tol: float
+            Tolerance for convergence criterion
+
+        verbose: bool
+            If True, prints relevant steps of the numerical procedures
+        """
+
         # Model Parameters
         self.beta = beta
         self.gamma = gamma
@@ -56,7 +112,25 @@ class Aiyagari:
         self.grid_a = create_grid(n=na, min_val=-phi, max_val=amax, grid_growth=grid_growth)
 
     def household(self, w, r):
-        # TODO documentation
+        """
+        Solves the household problem given the wage and the interest rate using the endogenous grid method.
+
+        Parameters
+        ----------
+        w: float
+            Wages
+
+        r: float
+            Interest Rate
+
+        Returns
+        -------
+        pa: numpy.ndarray
+            Policy function for saving, to be used in conjuntction with `grid_a`
+
+        pc: numpy.ndarray
+            Policy function for consumption, to be used in conjuntction with `grid_a`
+        """
 
         # Policy functions
         grid_a_2d = np.repeat(self.grid_a, self.ns).reshape(self.na, self.ns)
@@ -115,9 +189,20 @@ class Aiyagari:
         return pa, pc
 
     def invariant_dist(self, pa):
-        # TODO documentation
+        """
+        Finds the stationary distribution of wealth and labor income (a, s)
 
-        # Non-stochastic simulation
+        Parameters
+        ----------
+        pa: numpy.ndarray
+            Savings policy function from the househould
+
+        Returns
+        -------
+        stat_dist: numpy.ndarray
+            stationary distribution of (a, s)
+        """
+        # Allocating the policy function to the grid of asset (non-stochastic simulation)
         nus = np.zeros((self.na, self.ns), dtype=int)  # Indexes of the lower bound of the intervals for the non-stochastic simulation
         ps = np.zeros((self.na, self.ns))  # "probability" / mass to be assined to the lower bound of the interval of the non-stochastic simulation
 
@@ -139,17 +224,100 @@ class Aiyagari:
         stat_dist = self._find_stat_dist(stat_dist, nus, ps, self.transmat_s, self.na, self.ns, self.tol, self.maxiter, self.verbose)
         return stat_dist
 
+    def capital_demand(self, r):
+        """
+        Total capital demand from firms
+
+        Parameters
+        ----------
+        r: float
+            Interest rate
+
+        Returns
+        -------
+        kd: float
+            Capital demand
+        """
+        kd = (self.alpha / (r + self.delta)) ** (1 / (1 - self.alpha)) * self.l_bar
+        w = (1 - self.alpha) * (kd / self.l_bar) ** self.alpha
+        return kd, w
+
+    def capital_supply(self, w, r):
+        """
+        Net supply of capital that households are willing to supply, given
+        wages (w) and interest rates (r)
+
+        Parameters
+        ----------
+        w: float
+            Wages
+
+        r: float
+            Interest Rates
+
+        Returns
+        -------
+        ks: float
+            Net capital supply
+        """
+        # Solve household
+        pol_a, pol_c = self.household(w, r)
+
+        # Compute Invariant distribution
+        stat_dist = self.invariant_dist(pol_a)
+
+        # Compute Excess Demand of asset market
+        grid_a_2d = np.repeat(self.grid_a[None, :], self.ns, axis=0).T  # repeat columns of gA
+
+        # Aggregate asset supply
+        ks = (stat_dist * grid_a_2d).sum()
+        return ks
+
+    def solve_equilibrium(self):
+        """
+        Given the parameters, solves the model to find all the endogenous eleements
+
+        Returns
+        -------
+        pol_a: numpy.ndarray
+            Policy function for household savings. To be used in conjunction with self.grid_a
+
+        pol_c: numpy.ndarray
+            Policy function for household consumption. To be used in conjunction with self.grid_a
+
+        stat_dist: numpy.ndarray
+            Stationary distribution of the wealth and labor income (a, s)
+
+        kd: float
+            Equilibrium level of capital
+        r: float
+            Equilibrium interest rate
+
+        w: float
+            Equilibrium wage
+        """
+        # "brackets" for the Brent root-finding
+        r0 = 0.001  # lower bound guess (make sure excess demand is negative)
+        r1 = 1 / self.beta - 1  # upper bound guess (make sure excess demand is positive)
+        r = brentq(self._excess_demand, r0, r1, xtol=self.tol, maxiter=self.maxiter)
+
+        kd, w = self.capital_demand(r)
+        pol_a, pol_c = self.household(w, r)
+        stat_dist = self.invariant_dist(pol_a)
+
+        return pol_a, pol_c, stat_dist, kd, r, w
+
     @staticmethod
     @njit
     def _find_stat_dist(stat_dist_init, a_idx, p_vals, transmat, na, ns, tol, maxiter, verbose):
-
-        # There is no point in building the full transition function, we iterate the stationary distribution directly, only in the relevant indexes
+        # There is no point in building the full transition function. We
+        # iterate the stationary distribution directly, only in the relevant
+        # indexes
         for ii in range(maxiter):
-
             stat_dist_new = np.zeros((na, ns))
             for s in range(ns):
                 for a in range(na):
-                    if stat_dist_init[a, s] > 0:  # If the stationary distribution already converged to zero, do not waste time on these  # TODO test this
+                    if stat_dist_init[a, s] > 0:  # If the stationary distribution already converged to zero, do not waste time on these
                         stat_dist_new[a_idx[a, s], s] += p_vals[a, s] * stat_dist_init[a, s]
                         stat_dist_new[np.minimum(a_idx[a, s] + 1, na - 1), s] += (1 - p_vals[a, s]) * stat_dist_init[a, s]
             stat_dist_new = stat_dist_new @ transmat
@@ -169,55 +337,7 @@ class Aiyagari:
 
         return stat_dist_init
 
-    def capital_demand(self, r):
-        # TODO Documentation
-        kd = (self.alpha / (r + self.delta)) ** (1 / (1 - self.alpha)) * self.l_bar  # capital demand
-        w = (1 - self.alpha) * (kd / self.l_bar) ** self.alpha
-        return kd, w
-
-    def capital_supply(self, w, r):
-        # TODO Documentation
-        # Solve household
-        pol_a, pol_c = self.household(w, r)
-
-        # Compute Invariant distribution
-        stat_dist = self.invariant_dist(pol_a)
-
-        # Compute Excess Demand of asset market
-        grid_a_2d = np.repeat(self.grid_a[None, :], self.ns, axis=0).T  # repeat columns of gA
-
-        # Aggregate asset supply
-        ks = (stat_dist * grid_a_2d).sum()
-        return ks
-
     def _excess_demand(self, r):
-        # TODO Documentation
-        # Compute Capital Demand and implied wage from the production function
-        # kd = (self.alpha / (r + self.delta)) ** (1 / (1 - self.alpha)) * self.l_bar  # capital demand
-        # w = (1 - self.alpha) * (kd / self.l_bar) ** self.alpha
         kd, w = self.capital_demand(r)
-
-        # Aggregate asset supply
         ks = self.capital_supply(w, r)
-
-        # Excess demand in percentage
-        exc_dem = (ks - kd) / ((ks + kd) / 2)
-        return exc_dem
-
-    def solve_equilibrium(self):
-        # TODO Documentation
-        #  returns all endogenous variables
-
-
-        # "brackets" for the Brent root-finding
-        r0 = 0.001  # lower bound guess (make sure excess demand is negative)
-        r1 = 1 / self.beta - 1  # upper bound guess (make sure excess demand is positive)
-
-        # TODO tol may be too fine here
-        r = brentq(self._excess_demand, r0, r1, xtol=0.0001, maxiter=self.maxiter)
-
-        kd, w = self.capital_demand(r)
-        pol_a, pol_c = self.household(w, r)
-        stat_dist = self.invariant_dist(pol_a)
-
-        return pol_a, pol_c, stat_dist, kd, r, w
+        return (ks - kd) / ((ks + kd) / 2)  # Excess demand in percentage
