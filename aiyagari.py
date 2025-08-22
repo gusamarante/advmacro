@@ -12,7 +12,7 @@ class Aiyagari:
     def __init__(
             self,
             beta=0.96,
-            gamma=0.2,
+            gamma=2.0,
             alpha=0.33,
             delta=0.05,
             phi=0,
@@ -24,7 +24,7 @@ class Aiyagari:
             grid_growth=0.025,
             ar1_method='rouwenhorst',
             maxiter=50_000,
-            tol=1e-8,
+            tol=1e-6,
             verbose=False,
     ):
         # TODO Documentation
@@ -144,7 +144,7 @@ class Aiyagari:
     def _find_stat_dist(stat_dist_init, a_idx, p_vals, transmat, na, ns, tol, maxiter, verbose):
 
         # There is no point in building the full transition function, we iterate the stationary distribution directly, only in the relevant indexes
-        for ii in range(maxiter):  # TODO speed this up
+        for ii in range(maxiter):
 
             stat_dist_new = np.zeros((na, ns))
             for s in range(ns):
@@ -153,6 +153,7 @@ class Aiyagari:
                         stat_dist_new[a_idx[a, s], s] += p_vals[a, s] * stat_dist_init[a, s]
                         stat_dist_new[np.minimum(a_idx[a, s] + 1, na - 1), s] += (1 - p_vals[a, s]) * stat_dist_init[a, s]
             stat_dist_new = stat_dist_new @ transmat
+            stat_dist_new = np.minimum(np.maximum(stat_dist_new, 0), 1)
 
             d = np.max(np.abs(stat_dist_init - stat_dist_new))
             stat_dist_init = stat_dist_new
@@ -181,7 +182,7 @@ class Aiyagari:
             return res[0]
 
         # TODO tol may be too fine here
-        r = brentq(_obj_func, r0, r1, xtol=0.0001)
+        r = brentq(_obj_func, r0, r1, xtol=0.0001, maxiter=self.maxiter)
 
         # TODO compute output
         return r
@@ -221,9 +222,10 @@ class Aiyagari:
 ag = Aiyagari(verbose=False)
 print(ag.solve_equilibrium())
 
-# print(ag._excess_demand(0.04)[0])
+# print(ag._excess_demand(0.041667)[0])
 
-# pa, pc = ag.household(1, 0.04)
+# pa, pc = ag.household(1.2871715717061494, 0.0376592780519075)
+
 # stat_distri = ag.invariant_dist(pa)
 # print(stat_distri)
 # print(stat_distri.sum())

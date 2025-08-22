@@ -168,8 +168,7 @@ def solveHHproblemEGM(param, r, w):
 
     for iter in range(maxiter):
         # ===== Perform EGM ===== #
-        expect = beta * (1.0 + r) * np.matmul(cp ** (-gamma),
-                                              transS.T)  # Right hand side of Euler Eq.
+        expect = beta * (1.0 + r) * np.matmul(cp ** (-gamma), transS.T)  # Right hand side of Euler Eq.
         c = expect ** (-1.0 / gamma)  # Invert marginal util to get contemporaneous C
         endogAA = (c + gAA - w * gSS) / (1 + r)  # compute asset state on endogenous grid (note that gAA is the policy function, which is on-grid)
 
@@ -417,7 +416,11 @@ def ModelStats(param, decisions, dsn, w, r, Kd, Ea):
 # dsn = solveInvariant(param, dec)
 
 param = setPar()
-(decisions, dsn, w, r, Kd, Ea) = model_solution(param)
-ModelStats(param, decisions, dsn, w, r, Kd, Ea)
+ed = ExcessDemand(param, 0.041667)[0]
+print(ed)
 
-print(r)
+
+# param = setPar()
+# (decisions, dsn, w, r, Kd, Ea) = model_solution(param)
+# # ModelStats(param, decisions, dsn, w, r, Kd, Ea)
+# print(w)
