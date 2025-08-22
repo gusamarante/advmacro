@@ -412,12 +412,12 @@ def ModelStats(param, decisions, dsn, w, r, Kd, Ea):
     plt.show()
 
 
-param = setPar()
-dec = solveHHproblemEGM(param, 0.04, 1.0)
-dsn = solveInvariant(param, dec)
-
 # param = setPar()
-# (decisions, dsn, w, r, Kd, Ea) = model_solution(param)
-# ModelStats(param, decisions, dsn, w, r, Kd, Ea)
+# dec = solveHHproblemEGM(param, 0.04, 1.0)
+# dsn = solveInvariant(param, dec)
 
-a = 1
+param = setPar()
+(decisions, dsn, w, r, Kd, Ea) = model_solution(param)
+ModelStats(param, decisions, dsn, w, r, Kd, Ea)
+
+print(r)

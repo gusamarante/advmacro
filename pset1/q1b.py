@@ -115,7 +115,7 @@ ps = np.maximum(np.minimum(ps, 1), 0)
 # ===== Stationary Distribution =====
 # We could iterate on every point of the transition matrix, but since its size
 # is (na*ns X na*ns) and it is sparse, we can do something smarter. We iterate
-# the stationary distribution directly and update only the values of its
+# the stationary distribution directly, and not the full matrix, and update only the values of its
 # relevant indexes
 
 stat_dist = np.ones((na, ns)) / (na * ns)

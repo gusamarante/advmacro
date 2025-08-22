@@ -12,7 +12,7 @@ class DiscreteAR1:
     z_t = rho * z_{t-1} + sigma * e_t, where e_t ~ N(0, 1).
     """
 
-    def __init__(self, n, rho, sigma_eps, method="tauchen", m=3, tol=1e-6, maxiter=5000):
+    def __init__(self, n, rho, sigma_eps, method="tauchen", m=3, tol=1e-6, maxiter=5000, verbose=False):
         """
         Initialize the Tauchen object.
 
@@ -34,6 +34,15 @@ class DiscreteAR1:
         m: float
             Number of standard deviations of z to consider for the coverage of
             the grid (default is 3). Only used if method is "tauchen".
+
+        tol: float
+            Precision for convergence
+
+        maxiter: int
+            maximum number of iterations
+
+        verbose: bool
+            If True, prints relevant computation during runtime
 
         Attributes
         ----------
@@ -58,7 +67,7 @@ class DiscreteAR1:
         else:
             raise ValueError("Method must be either 'tauchen' or 'rouwenhorst'")
 
-        self.inv_dist = stationary_dist(self.transmat.T, tol=tol, maxiter=maxiter)
+        self.inv_dist = stationary_dist(self.transmat.T, tol=tol, maxiter=maxiter, verbose=verbose)
 
     def simulate(self, n_periods, seed=None):
         """
@@ -188,9 +197,8 @@ def stationary_dist(transmat, tol=1e-6, maxiter=5000, verbose=False):
         stat_dist_out /= stat_dist_out.sum()
         d = np.max(np.abs(stat_dist_out - stat_dist))
 
-        if ii % 50 == 0:
-            if verbose:
-                print(f"Iteration {ii}: d={d}")
+        if (ii % 100 == 0) and verbose:
+            print(f"AR(1) Invariant Distribution - Iteration {ii} with diff = {d}")
 
         stat_dist = stat_dist_out
         if d < tol:
