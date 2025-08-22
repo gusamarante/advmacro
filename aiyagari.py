@@ -206,7 +206,8 @@ class Aiyagari:
 
     def solve_equilibrium(self):
         # TODO Documentation
-        #  find r and w that clears all the market and stat dist
+        #  returns all endogenous variables
+
 
         # "brackets" for the Brent root-finding
         r0 = 0.001  # lower bound guess (make sure excess demand is negative)
