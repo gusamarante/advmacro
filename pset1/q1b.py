@@ -150,109 +150,94 @@ def find_stat_dist(stat_dist_init, a_idx, p_vals, transmat, maxiter, tol):
 stat_dist = find_stat_dist(stat_dist, nus, ps, transmat_s, maxiter, tol)
 
 
-# TODO BATIDO ATÉ AQUI
-# for s in range(ns):
-#     for sp in range(ns):
-#         for a in range(na):
-#             prob_s = transmat_s[s, sp]  # TODO summarize this
-#             nu = min(np.searchsorted(grid_a, pa[a, s]), na - 1)
-#             if nu == na - 1:
-#                 transfunc[a * ns + s, nu * ns + sp] = prob_s
-#             else:
-#                 p = (grid_a[nu + 1] - pa[a, s]) / (grid_a[nu + 1] - grid_a[nu])
-#                 transfunc[a * ns + s, nu * ns + sp] = prob_s * p
-#                 transfunc[a * ns + s, (nu + 1) * ns + sp] = prob_s * (1 - p)
-#
-# stat_dist = stationary_dist(transfunc.T, tol=tol, verbose=True, maxiter=50_000)
-# stat_dist = stat_dist.reshape(na, ns)
-
 # ===== Plot Policy Functions =====
-# size = 5
-# fig = plt.figure(figsize=(size * (16 / 5), size))
-#
-# ax = plt.subplot2grid((1, 2), (0, 0))
-# ax.set_title("Savings Policy $a^\prime=g_a(a,s)$")
-# for ii in range(ns):
-#     ax.plot(grid_a, pa[:, ii], label=fr"s={round(grid_s[ii], 2)}")
-# ax.set_xlabel(r"$a$")
-# ax.set_ylabel(r"$a^\prime$")
-# ax.axhline(0, color='black', lw=0.5)
-# ax.axvline(0, color='black', lw=0.5)
-# ax.xaxis.grid(color="grey", linestyle="-", linewidth=0.5, alpha=0.5)
-# ax.yaxis.grid(color="grey", linestyle="-", linewidth=0.5, alpha=0.5)
-# ax.legend(loc='upper left', frameon=True)
-#
-# ax = plt.subplot2grid((1, 2), (0, 1))
-# ax.set_title(r"Policy Function $c=g_c(a,s)$")
-# for ii in range(ns):
-#     ax.plot(grid_a, pc[:, ii], label=fr"s={round(grid_s[ii], 2)}")
-# ax.axhline(0, color='black', lw=0.5)
-# ax.axvline(0, color='black', lw=0.5)
-# ax.set_xlabel(r"$a$")
-# ax.set_ylabel(r"$c$")
-# ax.xaxis.grid(color="grey", linestyle="-", linewidth=0.5, alpha=0.5)
-# ax.yaxis.grid(color="grey", linestyle="-", linewidth=0.5, alpha=0.5)
-# ax.legend(loc='lower right', frameon=True)
-#
-# plt.tight_layout()
-#
-# plt.savefig(f'/Users/{getpass.getuser()}/Dropbox/PhD/Advanced Macro/PSET 1/figures/q1b policy functions rho {rho} sigma {sigma}.pdf')
-# plt.show()
-# plt.close()
+size = 5
+fig = plt.figure(figsize=(size * (16 / 5), size))
+
+ax = plt.subplot2grid((1, 2), (0, 0))
+ax.set_title("Savings Policy $a^\prime=g_a(a,s)$")
+for ii in range(ns):
+    ax.plot(grid_a, pa[:, ii], label=fr"s={round(grid_s[ii], 2)}")
+ax.set_xlabel(r"$a$")
+ax.set_ylabel(r"$a^\prime$")
+ax.axhline(0, color='black', lw=0.5)
+ax.axvline(0, color='black', lw=0.5)
+ax.xaxis.grid(color="grey", linestyle="-", linewidth=0.5, alpha=0.5)
+ax.yaxis.grid(color="grey", linestyle="-", linewidth=0.5, alpha=0.5)
+ax.legend(loc='upper left', frameon=True)
+
+ax = plt.subplot2grid((1, 2), (0, 1))
+ax.set_title(r"Policy Function $c=g_c(a,s)$")
+for ii in range(ns):
+    ax.plot(grid_a, pc[:, ii], label=fr"s={round(grid_s[ii], 2)}")
+ax.axhline(0, color='black', lw=0.5)
+ax.axvline(0, color='black', lw=0.5)
+ax.set_xlabel(r"$a$")
+ax.set_ylabel(r"$c$")
+ax.xaxis.grid(color="grey", linestyle="-", linewidth=0.5, alpha=0.5)
+ax.yaxis.grid(color="grey", linestyle="-", linewidth=0.5, alpha=0.5)
+ax.legend(loc='lower right', frameon=True)
+
+plt.tight_layout()
+
+plt.savefig(f'/Users/{getpass.getuser()}/Dropbox/PhD/Advanced Macro/PSET 1/figures/q1b policy functions rho {rho} sigma {sigma}.pdf')
+plt.show()
+plt.close()
 
 
 # ===== Plot A condtional on S =====
-# size = 5
-# fig = plt.figure(figsize=(size * (16 / 5), size))
-#
-# ax = plt.subplot2grid((1, 1), (0, 0))
-# ax.set_title("Distributions of $a$ conditional on $s$")
-# for ii in range(ns):
-#     ax.plot(grid_a, stat_dist[:, ii] / stat_dist[:, ii].sum(), label=fr"s={round(grid_s[ii], 2)}")
-# ax.set_xlabel(r"$a$")
-# ax.set_ylabel("Density")
-# ax.axhline(0, color='black', lw=0.5)
-# ax.axvline(0, color='black', lw=0.5)
-# ax.xaxis.grid(color="grey", linestyle="-", linewidth=0.5, alpha=0.5)
-# ax.yaxis.grid(color="grey", linestyle="-", linewidth=0.5, alpha=0.5)
-# ax.legend(loc='best', frameon=True)
-#
-# plt.tight_layout()
-#
-# # plt.savefig(f'/Users/{getpass.getuser()}/Dropbox/PhD/Advanced Macro/PSET 1/figures/q1b policy functions rho {rho} sigma {sigma}.pdf')
-# plt.show()
-# plt.close()
+size = 5
+fig = plt.figure(figsize=(size * (16 / 5), size))
+
+ax = plt.subplot2grid((1, 1), (0, 0))
+ax.set_title("Distributions of $a$ conditional on $s$")
+for ii in range(ns):
+    ax.plot(grid_a, stat_dist[:, ii] / stat_dist[:, ii].sum(), label=fr"s={round(grid_s[ii], 2)}")
+ax.set_xlabel(r"$a$")
+ax.set_ylabel("Density")
+ax.set_xlim(None, 100)
+ax.axhline(0, color='black', lw=0.5)
+ax.axvline(0, color='black', lw=0.5)
+ax.xaxis.grid(color="grey", linestyle="-", linewidth=0.5, alpha=0.5)
+ax.yaxis.grid(color="grey", linestyle="-", linewidth=0.5, alpha=0.5)
+ax.legend(loc='best', frameon=True)
+
+plt.tight_layout()
+
+plt.savefig(f'/Users/{getpass.getuser()}/Dropbox/PhD/Advanced Macro/PSET 1/figures/q1b distribution of a conditional on s.pdf')
+plt.show()
+plt.close()
 
 
 # ===== Plot Stationary Distribution =====
-# size = 5
-# fig = plt.figure(figsize=(size * (16 / 5), size))
-#
-# ax = plt.subplot2grid((1, 2), (0, 0))
-# ax.set_title("Distribution of $s$")
-# ax.plot(grid_s, inv_dist_s, label="from AR(1)")
-# ax.plot(grid_s, stat_dist.sum(axis=0), label="from invariant distribution")
-# ax.set_xlabel(r"$s$")
-# ax.set_ylabel("Density")
-# ax.axhline(0, color='black', lw=0.5)
-# ax.axvline(0, color='black', lw=0.5)
-# ax.xaxis.grid(color="grey", linestyle="-", linewidth=0.5, alpha=0.5)
-# ax.yaxis.grid(color="grey", linestyle="-", linewidth=0.5, alpha=0.5)
-# ax.legend(loc='best', frameon=True)
-#
-# ax = plt.subplot2grid((1, 2), (0, 1))
-# ax.set_title("Distribution of $a$")
-# ax.plot(grid_a, stat_dist.sum(axis=1), label="from invariant distribution")
-# ax.axhline(0, color='black', lw=0.5)
-# ax.axvline(0, color='black', lw=0.5)
-# ax.set_xlabel(r"$a$")
-# ax.set_ylabel("Density")
-# ax.xaxis.grid(color="grey", linestyle="-", linewidth=0.5, alpha=0.5)
-# ax.yaxis.grid(color="grey", linestyle="-", linewidth=0.5, alpha=0.5)
-# ax.legend(loc='best', frameon=True)
-#
-# plt.tight_layout()
-#
-# # plt.savefig(f'/Users/{getpass.getuser()}/Dropbox/PhD/Advanced Macro/PSET 1/figures/q1b policy functions rho {rho} sigma {sigma}.pdf')
-# plt.show()
-# plt.close()
+size = 5
+fig = plt.figure(figsize=(size * (16 / 5), size))
+
+ax = plt.subplot2grid((1, 2), (0, 0))
+ax.set_title("Distribution of $s$")
+ax.plot(grid_s, inv_dist_s, label="from AR(1)")
+ax.plot(grid_s, stat_dist.sum(axis=0), label="from invariant distribution")
+ax.set_xlabel(r"$s$")
+ax.set_ylabel("Density")
+ax.axhline(0, color='black', lw=0.5)
+ax.axvline(0, color='black', lw=0.5)
+ax.xaxis.grid(color="grey", linestyle="-", linewidth=0.5, alpha=0.5)
+ax.yaxis.grid(color="grey", linestyle="-", linewidth=0.5, alpha=0.5)
+ax.legend(loc='best', frameon=True)
+
+ax = plt.subplot2grid((1, 2), (0, 1))
+ax.set_title("Distribution of $a$")
+ax.plot(grid_a, stat_dist.sum(axis=1), label="from invariant distribution")
+ax.axhline(0, color='black', lw=0.5)
+ax.axvline(0, color='black', lw=0.5)
+ax.set_xlabel(r"$a$")
+ax.set_ylabel("Density")
+ax.xaxis.grid(color="grey", linestyle="-", linewidth=0.5, alpha=0.5)
+ax.yaxis.grid(color="grey", linestyle="-", linewidth=0.5, alpha=0.5)
+ax.legend(loc='best', frameon=True)
+
+plt.tight_layout()
+
+plt.savefig(f'/Users/{getpass.getuser()}/Dropbox/PhD/Advanced Macro/PSET 1/figures/q1b Stationary distribution.pdf')
+plt.show()
+plt.close()
