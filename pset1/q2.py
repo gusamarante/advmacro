@@ -3,7 +3,8 @@ import numpy as np
 
 
 ag = Aiyagari(ns=3, phi=0)
-pol_a, pol_c, stat_dist, k, r, w = ag.solve_equilibrium()
+ag.grid_s = np.exp(1.25 * np.log(ag.grid_s))  # Increase labor market variance
+pol_a, pol_c, stat_dist, k, r, w, _, _ = ag.solve_equilibrium()
 
 print('Interest Rate', r)
 print('Wages', w)

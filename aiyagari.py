@@ -3,6 +3,9 @@ from scipy.interpolate import interp1d
 from scipy.optimize import brentq
 from numba import njit
 import numpy as np
+import warnings
+
+warnings.filterwarnings("ignore", category=RuntimeWarning)
 
 
 class Aiyagari:
@@ -14,6 +17,7 @@ class Aiyagari:
             alpha=0.33,
             delta=0.05,
             phi=0,
+            tau_l=0,
             rho=0.9,
             sigma=0.1,
             na=300,
@@ -33,6 +37,8 @@ class Aiyagari:
             Vol. 109, No. 3 (Aug., 1994), pp. 659-684 (26 pages)
             https://www.jstor.org/stable/2118417
 
+        Includes a mechanism for income redistribution towards a universal basic income
+
         Parameters
         ----------
         beta: float
@@ -49,6 +55,9 @@ class Aiyagari:
 
         phi: float
             Credit constraint / lower bound of the asset grid
+
+        tau_l: float
+            Tax rate on wages
 
         rho: float
             AR(1) coefficient for the labor income process
@@ -90,6 +99,7 @@ class Aiyagari:
         self.alpha = alpha
         self.delta = delta
         self.phi = phi
+        self.tau_l = tau_l
         self.rho = rho
         self.sigma = sigma
 
@@ -130,15 +140,26 @@ class Aiyagari:
 
         pc: numpy.ndarray
             Policy function for consumption, to be used in conjuntction with `grid_a`
+
+        grid_coh_gross: numpy.ndarray
+            Grid of gross income
+
+        grid_coh_net: numpy.ndarray
+            Grid of net income
         """
+
+        # Universal basic income
+        w_net = w * (1 - self.tau_l)
+        T = self.tau_l * w * self.l_bar  # Total tax revenue
+        ubi = T / self.l_bar  # Equally distributed ammount
 
         # Policy functions
         grid_a_2d = np.repeat(self.grid_a, self.ns).reshape(self.na, self.ns)
         grid_s_2d = np.repeat(self.grid_s, self.na).reshape(self.ns, self.na).T
-        grid_coh = grid_s_2d * w + (1 + r) * grid_a_2d
+        grid_coh_gross = grid_s_2d * w + (1 + r) * grid_a_2d
+        grid_coh = grid_s_2d * w_net + (1 + r) * grid_a_2d + ubi
 
         pc = grid_coh - grid_a_2d
-        pa = np.zeros((self.na, self.ns))
 
         # ===== Endogenous Grid Method =====
         for ii in range(self.maxiter):
@@ -150,7 +171,7 @@ class Aiyagari:
             current_c = expect ** (- 1 / self.gamma)
 
             # Endogenous asset grid
-            endog_ap = (current_c + grid_a_2d - w * grid_s_2d) / (1 + r)
+            endog_ap = (current_c + grid_a_2d - w_net * grid_s_2d - ubi) / (1 + r)
 
             # Interpolate to find the correct asset policy function
             pa_new = np.zeros((self.na, self.ns))
@@ -181,12 +202,13 @@ class Aiyagari:
                 print(f"Household EGM - Iteration {ii} with diff = {diff}")
 
             if diff < self.tol:
-                print(f'Household EGM - Convergence achieved after {ii + 1} iteations', "\n")
+                if self.verbose:
+                    print(f'Household EGM - Convergence achieved after {ii + 1} iteations', "\n")
                 break
         else:
             raise ArithmeticError('Household EGM: Maximum iterations reached. Convergence not achieved')
 
-        return pa, pc
+        return pa, pc, grid_coh_gross, grid_coh
 
     def invariant_dist(self, pa):
         """
@@ -261,7 +283,7 @@ class Aiyagari:
             Net capital supply
         """
         # Solve household
-        pol_a, pol_c = self.household(w, r)
+        pol_a, pol_c, coh_gross, coh_net = self.household(w, r)
 
         # Compute Invariant distribution
         stat_dist = self.invariant_dist(pol_a)
@@ -295,6 +317,12 @@ class Aiyagari:
 
         w: float
             Equilibrium wage
+
+        grid_coh_gross: numpy.ndarray
+            Grid of gross income
+
+        grid_coh_net: numpy.ndarray
+            Grid of net income
         """
         # "brackets" for the Brent root-finding
         r0 = 0.001  # lower bound guess (make sure excess demand is negative)
@@ -302,10 +330,10 @@ class Aiyagari:
         r = brentq(self._excess_demand, r0, r1, xtol=self.tol, maxiter=self.maxiter)
 
         kd, w = self.capital_demand(r)
-        pol_a, pol_c = self.household(w, r)
+        pol_a, pol_c, coh_gross, coh_net = self.household(w, r)
         stat_dist = self.invariant_dist(pol_a)
 
-        return pol_a, pol_c, stat_dist, kd, r, w
+        return pol_a, pol_c, stat_dist, kd, r, w, coh_gross, coh_net
 
     @staticmethod
     @njit
@@ -330,7 +358,8 @@ class Aiyagari:
                 print(f"Stationary Distribution - Iteration {ii}")  # `d` is not printable inside numba-decorated function
 
             if d < tol:
-                print(f'Stationary Distribution - Convergence achieved after {ii + 1} iteations', "\n")
+                if verbose:
+                    print(f'Stationary Distribution - Convergence achieved after {ii + 1} iteations', "\n")
                 break
         else:
             raise ArithmeticError('Maximum iterations reached. Convergence not achieved')
