@@ -123,7 +123,8 @@ class Aiyagari:
 
     def household(self, w, r):
         """
-        Solves the household problem given the wage and the interest rate using the endogenous grid method.
+        Solves the household problem given the wage and the interest rate using
+        the endogenous grid method.
 
         Parameters
         ----------
@@ -139,7 +140,8 @@ class Aiyagari:
             Policy function for saving, to be used in conjuntction with `grid_a`
 
         pc: numpy.ndarray
-            Policy function for consumption, to be used in conjuntction with `grid_a`
+            Policy function for consumption, to be used in conjuntction with
+            `grid_a`
 
         grid_coh_gross: numpy.ndarray
             Grid of gross income
@@ -153,13 +155,16 @@ class Aiyagari:
         T = self.tau_l * w * self.l_bar  # Total tax revenue
         ubi = T / self.l_bar  # Equally distributed ammount
 
-        # Policy functions
+        # Asset and labor supply grid
         grid_a_2d = np.repeat(self.grid_a, self.ns).reshape(self.na, self.ns)
         grid_s_2d = np.repeat(self.grid_s, self.na).reshape(self.ns, self.na).T
-        grid_coh_gross = grid_s_2d * w + (1 + r) * grid_a_2d
-        grid_coh = grid_s_2d * w_net + (1 + r) * grid_a_2d + ubi
 
-        pc = grid_coh - grid_a_2d
+        # Cash on hand
+        grid_coh_gross = grid_s_2d * w + (1 + r) * grid_a_2d
+        grid_coh_net = grid_s_2d * w_net + (1 + r) * grid_a_2d + ubi
+
+        # Policy functions
+        pc = grid_coh_net - grid_a_2d
 
         # ===== Endogenous Grid Method =====
         for ii in range(self.maxiter):
@@ -189,9 +194,10 @@ class Aiyagari:
                     if pa_new[a_idx, s_idx] < - self.phi:
                         pa_new[a_idx, s_idx] = - self.phi
                     else:
-                        break  # we can stop searching after the kink due to monotonicity
+                        # we can stop searching after the kink due to monotonicity
+                        break
 
-            pc_new = grid_coh - pa_new
+            pc_new = grid_coh_net - pa_new
 
             # Check convergence
             diff = np.max(np.abs(pc_new - pc))
@@ -208,7 +214,7 @@ class Aiyagari:
         else:
             raise ArithmeticError('Household EGM: Maximum iterations reached. Convergence not achieved')
 
-        return pa, pc, grid_coh_gross, grid_coh
+        return pa, pc, grid_coh_gross, grid_coh_net
 
     def invariant_dist(self, pa):
         """
@@ -297,15 +303,18 @@ class Aiyagari:
 
     def solve_equilibrium(self):
         """
-        Given the parameters, solves the model to find all the endogenous eleements
+        Given the parameters, solves the model to find all the endogenous
+        eleements
 
         Returns
         -------
         pol_a: numpy.ndarray
-            Policy function for household savings. To be used in conjunction with self.grid_a
+            Policy function for household savings. To be used in conjunction
+            with self.grid_a
 
         pol_c: numpy.ndarray
-            Policy function for household consumption. To be used in conjunction with self.grid_a
+            Policy function for household consumption. To be used in
+            conjunction with self.grid_a
 
         stat_dist: numpy.ndarray
             Stationary distribution of the wealth and labor income (a, s)
@@ -369,4 +378,4 @@ class Aiyagari:
     def _excess_demand(self, r):
         kd, w = self.capital_demand(r)
         ks = self.capital_supply(w, r)
-        return (ks - kd) / ((ks + kd) / 2)  # Excess demand in percentage
+        return (ks - kd) / ((ks + kd) / 2)  # in percentage
