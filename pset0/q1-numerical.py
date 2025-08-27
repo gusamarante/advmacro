@@ -71,11 +71,12 @@ def income_cdf(i):
         return pdist.cdf(inv_profit(i, wstar))
 
 def income_pdf(i):
-    # TODO integral not adding up to 1, adding up to the share of enterpreneurs
+    # This integral does not add up to 1. It adds up to the share of
+    # enterpreneurs
     if i < wstar:
         return 0
     else:
-        return pdist.pdf(inv_profit(i, wstar)) * inv_profit_deriv(i, wstar) / share_entre
+        return pdist.pdf(inv_profit(i, wstar)) * inv_profit_deriv(i, wstar)
 
 
 res = root_scalar(excess_demand, x0=0.5, rtol=1e-5)
