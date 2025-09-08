@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 import sequence_jacobian as sj
 import pandas as pd
 import numpy as np
+import getpass
 
 
 # =======================
@@ -132,3 +133,162 @@ out.columns = ['HA', 'RA', 'TA', 'TA n']
 out.index.name = 'parameters'
 
 print(out)
+
+
+# ===============================
+# ===== IRFs - Tax Financed =====
+# ===============================
+T = 300  # length of IRF
+rho_G = 0.8
+dG = 0.01 * (rho_G ** np.arange(T))  # Sequence of shocks
+shocks = {'G': dG}
+
+irfs_ha = ha.solve_impulse_linear(ss=ss, unknowns=['Y'], targets=['asset_mkt'], inputs=shocks)
+irfs_ra = ra.solve_impulse_linear(ss=ss_ra, unknowns=['Y'], targets=['asset_mkt'], inputs=shocks)
+irfs_ta = ta.solve_impulse_linear(ss=ss_ta, unknowns=['Y'], targets=['asset_mkt'], inputs=shocks)
+
+
+# --- plot ---
+size = 6
+fig = plt.figure(figsize=(size * (16 / 7), size))
+
+ax = plt.subplot2grid((2, 2), (0, 0))
+ax.set_title(r"Output $Y$")
+ax.plot(irfs_ra['Y'][:30], label='RA', color='tab:blue')
+ax.plot(irfs_ha['Y'][:30], label='HA', color='tab:orange')
+ax.plot(irfs_ta['Y'][:30], label='TA', color='tab:green')
+ax.axhline(0, color='black', lw=0.5)
+ax.axvline(0, color='black', lw=0.5)
+ax.set_ylabel(r"% deviation from steady-state")
+ax.set_xlabel(r"Periods $t$")
+ax.xaxis.grid(color="grey", linestyle="-", linewidth=0.5, alpha=0.5)
+ax.yaxis.grid(color="grey", linestyle="-", linewidth=0.5, alpha=0.5)
+ax.legend(loc='best', frameon=True)
+
+ax = plt.subplot2grid((2, 2), (0, 1))
+ax.set_title(r"Consumption $C$")
+ax.plot(irfs_ra['C'][:30], label='RA', color='tab:blue')
+ax.plot(irfs_ha['C'][:30], label='HA', color='tab:orange')
+ax.plot(irfs_ta['C'][:30], label='TA (Agg)', color='tab:green', ls='solid')
+ax.plot(irfs_ta['C_RA'][:30], label='TA (Share RA)', color='tab:green', ls='dashed')
+ax.plot(irfs_ta['C_H2M'][:30], label='TA (Share H2M)', color='tab:green', ls='dotted')
+ax.axhline(0, color='black', lw=0.5)
+ax.axvline(0, color='black', lw=0.5)
+ax.set_ylabel(r"% deviation from steady-state")
+ax.set_xlabel(r"Periods $t$")
+ax.xaxis.grid(color="grey", linestyle="-", linewidth=0.5, alpha=0.5)
+ax.yaxis.grid(color="grey", linestyle="-", linewidth=0.5, alpha=0.5)
+ax.legend(loc='best', frameon=True)
+
+ax = plt.subplot2grid((2, 2), (1, 0))
+ax.set_title(r"Government Spending $G$")
+ax.plot(irfs_ra['G'][:30], label='RA', color='tab:blue')
+ax.plot(irfs_ha['G'][:30], label='HA', color='tab:orange')
+ax.plot(irfs_ta['G'][:30], label='TA', color='tab:green')
+ax.axhline(0, color='black', lw=0.5)
+ax.axvline(0, color='black', lw=0.5)
+ax.set_ylabel(r"% deviation from steady-state")
+ax.set_xlabel(r"Periods $t$")
+ax.xaxis.grid(color="grey", linestyle="-", linewidth=0.5, alpha=0.5)
+ax.yaxis.grid(color="grey", linestyle="-", linewidth=0.5, alpha=0.5)
+ax.legend(loc='best', frameon=True)
+
+ax = plt.subplot2grid((2, 2), (1, 1))
+ax.set_title(r"Tax Revenue $T$")
+ax.plot(irfs_ra['T'][:30], label='RA', color='tab:blue')
+ax.plot(irfs_ha['T'][:30], label='HA', color='tab:orange')
+ax.plot(irfs_ta['T'][:30], label='TA', color='tab:green')
+ax.axhline(0, color='black', lw=0.5)
+ax.axvline(0, color='black', lw=0.5)
+ax.set_ylabel(r"% deviation from steady-state")
+ax.set_xlabel(r"Periods $t$")
+ax.xaxis.grid(color="grey", linestyle="-", linewidth=0.5, alpha=0.5)
+ax.yaxis.grid(color="grey", linestyle="-", linewidth=0.5, alpha=0.5)
+ax.legend(loc='best', frameon=True)
+
+plt.tight_layout()
+plt.savefig(f'/Users/{getpass.getuser()}/Dropbox/PhD/Advanced Macro/PSET 2/figures/q1b irfs.pdf')
+plt.show()
+plt.close()
+
+
+# ================================
+# ===== IRFs - Debt Financed =====
+# ================================
+T = 300  # length of IRF
+
+rho_G = 0.8
+dG = 0.01 * (rho_G ** np.arange(T))  # Sequence of shocks
+
+rho_B = 0.5 # low persistence shock
+dB = np.cumsum(dG) * rho_B ** np.arange(T) # Note the cumsum! The fiscal shock accumulates.
+shocks_B_low = {'G': dG, 'B': dB}
+
+rho_B = 0.8 # high persistence shock
+dB = np.cumsum(dG) * rho_B ** np.arange(T) # Note the cumsum! The fiscal shock accumulates.
+shocks_B_high = {'G': dG, 'B': dB}
+
+irfs_ha_blow = ha.solve_impulse_linear(ss=ss, unknowns=['Y'], targets=['asset_mkt'], inputs=shocks_B_low)
+irfs_ha_high = ha.solve_impulse_linear(ss=ss, unknowns=['Y'], targets=['asset_mkt'], inputs=shocks_B_high)
+
+
+# --- plot ---
+size = 6
+fig = plt.figure(figsize=(size * (16 / 7), size))
+
+ax = plt.subplot2grid((2, 2), (0, 0))
+ax.set_title(r"Output $Y$")
+ax.plot(irfs_ra['Y'][:30], label='Tax Financed', color='tab:blue')
+ax.plot(irfs_ha_blow['Y'][:30], label=r'Debt Financed (Low $\rho$)', color='tab:orange')
+ax.plot(irfs_ha_high['Y'][:30], label=r'Debt Financed (High $\rho$)', color='tab:green')
+ax.axhline(0, color='black', lw=0.5)
+ax.axvline(0, color='black', lw=0.5)
+ax.set_ylabel(r"% deviation from steady-state")
+ax.set_xlabel(r"Periods $t$")
+ax.xaxis.grid(color="grey", linestyle="-", linewidth=0.5, alpha=0.5)
+ax.yaxis.grid(color="grey", linestyle="-", linewidth=0.5, alpha=0.5)
+ax.legend(loc='best', frameon=True)
+
+ax = plt.subplot2grid((2, 2), (0, 1))
+ax.set_title(r"Consumption $C$")
+ax.plot(irfs_ra['C'][:30], label='Tax Financed', color='tab:blue')
+ax.plot(irfs_ha_blow['C'][:30], label=r'Debt Financed (Low $\rho$)', color='tab:orange')
+ax.plot(irfs_ha_high['C'][:30], label=r'Debt Financed (High $\rho$)', color='tab:green')
+ax.axhline(0, color='black', lw=0.5)
+ax.axvline(0, color='black', lw=0.5)
+ax.set_ylabel(r"% deviation from steady-state")
+ax.set_xlabel(r"Periods $t$")
+ax.xaxis.grid(color="grey", linestyle="-", linewidth=0.5, alpha=0.5)
+ax.yaxis.grid(color="grey", linestyle="-", linewidth=0.5, alpha=0.5)
+ax.legend(loc='best', frameon=True)
+
+ax = plt.subplot2grid((2, 2), (1, 0))
+ax.set_title(r"Government Spending $G$")
+ax.plot(irfs_ra['G'][:30], label='Tax Financed', color='tab:blue')
+ax.plot(irfs_ha_blow['G'][:30], label=r'Debt Financed (Low $\rho$)', color='tab:orange')
+ax.plot(irfs_ha_high['G'][:30], label=r'Debt Financed (High $\rho$)', color='tab:green')
+ax.axhline(0, color='black', lw=0.5)
+ax.axvline(0, color='black', lw=0.5)
+ax.set_ylabel(r"% deviation from steady-state")
+ax.set_xlabel(r"Periods $t$")
+ax.xaxis.grid(color="grey", linestyle="-", linewidth=0.5, alpha=0.5)
+ax.yaxis.grid(color="grey", linestyle="-", linewidth=0.5, alpha=0.5)
+ax.legend(loc='best', frameon=True)
+
+ax = plt.subplot2grid((2, 2), (1, 1))
+ax.set_title(r"Tax Revenue $T$")
+ax.plot(irfs_ra['T'][:30], label='Tax Financed', color='tab:blue')
+ax.plot(irfs_ha_blow['T'][:30], label=r'Debt Financed (Low $\rho$)', color='tab:orange')
+ax.plot(irfs_ha_high['T'][:30], label=r'Debt Financed (High $\rho$)', color='tab:green')
+ax.axhline(0, color='black', lw=0.5)
+ax.axvline(0, color='black', lw=0.5)
+ax.set_ylabel(r"% deviation from steady-state")
+ax.set_xlabel(r"Periods $t$")
+ax.xaxis.grid(color="grey", linestyle="-", linewidth=0.5, alpha=0.5)
+ax.yaxis.grid(color="grey", linestyle="-", linewidth=0.5, alpha=0.5)
+ax.legend(loc='best', frameon=True)
+
+plt.tight_layout()
+plt.savefig(f'/Users/{getpass.getuser()}/Dropbox/PhD/Advanced Macro/PSET 2/figures/q1c irfs.pdf')
+plt.show()
+plt.close()
