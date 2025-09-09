@@ -24,7 +24,7 @@ calibration = {
 }
 
 # ==============================
-# ===== RA Household Block =====
+# ===== HA Household Block =====
 # ==============================
 def income(Z, e_grid):  # Post-tax labor income
     y = Z * e_grid
