@@ -45,7 +45,6 @@ def setPar(
     tau = 0.1,	   # Adjustment costs
     nZ = 101,    # Grid of Z
     w = 1.0      # wages
-	#nN = 500      # Will define the employment grid "by hand".
     ):
 
 	# === SHOCK DISCRETIZATION
@@ -369,7 +368,7 @@ def SolveModel(param):
 
 count = 0
 rho_list = [0.5, 0.9]
-tau_list = [0.5, 0.9]
+tau_list = [0.0, 0.1, 0.5]
 df = pd.DataFrame()
 
 for rho_i in rho_list:
