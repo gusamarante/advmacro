@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 from scipy.stats import norm
-from scipy.optimize import brentq  # root-finding routine
+from scipy.optimize import brentq, minimize, Bounds  # root-finding routine
 from getpass import getuser
 
 def tauchen(N, rho, sigma, mu=0.0, m=3.0):
@@ -43,6 +43,7 @@ def setPar(
     c_f = 20.0,   # fixed cost
     A = 0.01,      # Related to labor supply. Inverse of Dbar in Hopenhayn.
     tau = 0.1,	   # Adjustment costs
+    tau_n = 0,    # income tax
     nZ = 101,    # Grid of Z
     w = 1.0      # wages
     ):
@@ -84,21 +85,24 @@ def setPar(
     param['alpha'] = alpha; param['beta'] = beta; param['F_trans'] = F_trans; param['gZ'] = gZ; param['nZ'] = nZ; param['tau'] = tau;
     param['c_e'] = c_e; param['c_f'] = c_f; param['A'] = A; param['Gprob'] = Gprob; param['w'] = w; param['nN'] = nN; param['gN'] = gN;
     param['adjust'] = adjust; param['gY'] = gY
+    param['tau_n'] = tau_n
 
     return param
 
 
 def SolveBellmanIncumbents(p_guess, param, print_it=False):
     # unpacking parameters
-    beta = param["beta"];
-    F_trans = param["F_trans"];
-    gZ = param["gZ"];
-    c_f = param["c_f"];
-    nZ = param["nZ"];
-    nN = param["nN"];
-    gN = param["gN"];
-    adjust = param["adjust"];
-    gY = param["gY"];
+    beta = param["beta"]
+    F_trans = param["F_trans"]
+    gZ = param["gZ"]
+    c_f = param["c_f"]
+    nZ = param["nZ"]
+    nN = param["nN"]
+    gN = param["gN"]
+    adjust = param["adjust"]
+    gY = param["gY"]
+    tau_n = param['tau_n']
+
 
     # housekeeping
     tol = 10 ** -5
@@ -116,8 +120,7 @@ def SolveBellmanIncumbents(p_guess, param, print_it=False):
     for iN in range(nN):
         for iNp in range(nN):
             for iZ in range(nZ):
-                profit_mat[iN, iZ, iNp] = p_guess * gY[iNp, iZ] - gN[
-                    iNp] - p_guess * c_f - adjust[iN, iNp]
+                profit_mat[iN, iZ, iNp] = p_guess * gY[iNp, iZ] - (1 + tau_n) * gN[iNp] - p_guess * c_f - adjust[iN, iNp]
 
     # ============== VF ITERATION ====
     for it in range(max_iter):
@@ -159,7 +162,6 @@ def SolveBellmanIncumbents(p_guess, param, print_it=False):
 
     return V, npi, exiter, npol, profit, tax_r
 
-
 def solve_price(param, solvefor_ce=False, print_it=False):
     if not solvefor_ce:  # === SOLVE FOR EQ. USING PRICES
         def entry(p_guess):
@@ -185,7 +187,6 @@ def solve_price(param, solvefor_ce=False, print_it=False):
         c_e = brentq(entry_ce, c0, c1, xtol = 0.001)
 
     return p, V, exiter, npi, npol, tax_r, profit, c_e
-
 
 def invariant_dist(param, solution, print_it=False):
     Gprob = param['Gprob'];
@@ -246,7 +247,8 @@ def solve_m(param, solution, print_it=False):
     # Aggregate variables
     Y = Yone * M
     N = np.sum(npol * mu) + param['c_e'] * M
-    T = np.sum(tax_r * mu)
+    T_n = np.sum(npol * mu * param['tau_n'])  # Added this to compute the income tax
+    T = np.sum(tax_r * mu) + T_n
     Pi = np.sum(profit * mu) - param['c_e'] * M
     Pi2 = p * Y - N - T  # compute profit in a different way to check
 
@@ -257,7 +259,6 @@ def solve_m(param, solution, print_it=False):
         zcut[i] = gZ[cut_index]
 
     return M, mu, zcut, Y, N, T, Pi, Pi2
-
 
 def ModelStats(param, sol_price, sol_dist, Printa=True):
     nN = param['nN'];
@@ -354,25 +355,37 @@ def SolveModel(param):
 
 
 # ===== SOLUTION =====
-count = 0
-rho_list = [0.5, 0.9]
-tau_list = [0.0, 0.1, 0.5]
 df = pd.DataFrame()
+count = 0
 
-for rho_i in rho_list:
-    for tau_i in tau_list:
-        param = setPar(rho=rho_i, tau=tau_i)
-        solution = SolveModel(param)
+param_baseline = setPar(tau=0, tau_n=0.02228055)
+solution = SolveModel(param_baseline)
 
-        df.loc[count, "Rho"] = param['rho']
-        df.loc[count, "Tau"] = param['tau']
-        df.loc[count, "Average Firm Size"] = solution[2][3]
-        df.loc[count, "Average Firm Productivity"] = solution[2][5]
-        df.loc[count, "Entry / Exit Rate"] = solution[2][4]
-        df.loc[count, "Average Misallocation"] = solution[2][6]
+df.loc[count, "Rho"] = param_baseline['rho']
+df.loc[count, "Tau"] = param_baseline['tau']
+df.loc[count, "Tau N"] = param_baseline['tau_n']
+df.loc[count, "Agg. Tax Revenue"] = solution[1][5]
+print(solution[1][5])
+df.loc[count, "Agg. Output"] = solution[1][3]
+df.loc[count, "Average Misallocation"] = solution[2][6]
+df.loc[count, "Average Firm Productivity"] = solution[2][5]
+df.loc[count, "Equilibrium Price"] = solution[0][0]
+count += 1
 
-        count += 1
+
+# target_tax = solution[1][5]
+#
+# def error_func(tau_n):
+#     print(tau_n)
+#     param_fun = setPar(tau=0, tau_n=tau_n)
+#     new_tax = SolveModel(param_fun)[1][5]
+#     return 100 * (solution[1][5] - new_tax) ** 2
+#
+# print("starting numerical solution")
+# res = minimize(error_func, 0.1, bounds=Bounds(0.02, 0.025))
+# print(res.success)
+# print(res.x)
 
 
-with pd.ExcelWriter(fr"/Users/{getuser()}/Dropbox/PhD/Advanced Macro/PSET 3/Q1 b c.xlsx") as writer:
+with pd.ExcelWriter(fr"/Users/{getuser()}/Dropbox/PhD/Advanced Macro/PSET 3/Q2.xlsx") as writer:
     df.to_excel(writer)
